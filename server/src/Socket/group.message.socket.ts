@@ -24,8 +24,8 @@
         allPendingMessage,
         clearSomePendingMessage
     } from '../controllers/group.message.controller';
-    import { checkChatLocked, getData, updateGroupSettings } from '../controllers/admin.controller';
-import { groupCreator } from '../controllers/admin.controller';
+    import { checkChatLocked, getData, updateGroupSettings } from '../controllers/group.admin.controller';
+import { groupCreator } from '../controllers/group.admin.controller';
 import { AllMembers, changeName, groupImage, profilePermission } from '../controllers/group.info.controller';
 import { forward_messages } from '../controllers/messagesForward.controller';
 import { allGroupsUserJoined } from '../controllers/group.lastMessage.controller';
