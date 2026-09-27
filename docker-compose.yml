@@ -1,0 +1,27 @@
+services:
+  server:
+    image: whatsapp_server_image
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: whatsapp-server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server:/app
+      # //keep it diffrent from main app docker because node modulus are diffrent of both local and docker
+      - /app/node_modules
+    restart: unless-stopped
+
+  client:
+    image: whatsapp_client_image
+    build: 
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: whatsapp_client
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    restart: unless-stopped
