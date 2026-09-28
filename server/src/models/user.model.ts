@@ -3,6 +3,7 @@ import { Document,Types } from 'mongoose';
 export interface IUser extends Document{
     _id:Types.ObjectId,
     name:string,
+    userName:string,
     email:string,
     password?:string,
     role:string,
@@ -18,6 +19,14 @@ const userSchema=new mongoose.Schema<IUser>({
         required:[true,'name is required'],
         minLength:[3,'name must be atleast 3 characters'],
         maxLength:[50,'name must be smaller than 50 characters'],
+    },
+    userName:{
+        type:String,
+        required:[true,'userName is required'],
+        unique:[true,'this username is already taken'],
+        minLength:[3,'userName must be atleast 3 characters'],
+        maxLength:[100,'userName cannot be greater than 100 characters'],
+        index:true,
     },
     email:{
         type:String,

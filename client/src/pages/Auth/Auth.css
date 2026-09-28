@@ -1,217 +1,348 @@
-.wa-auth-container {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, #1b2033 0%, #161c2e 50%, #111520 100%);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-.wa-auth-bg-icons {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.wa-auth-bg-icon {
-  position: absolute;
-  width: 260px;
-  height: 260px;
-  left: -60px;
-  bottom: -40px;
-  opacity: 0.08;
-  background: url("https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg")
-    center/contain no-repeat;
-  filter: invert(60%) sepia(60%) saturate(400%) hue-rotate(100deg)
-    brightness(0.75);
-  transform: rotate(35deg);
-}
-
-.wa-auth-card {
-  width: 100%;
-  max-width: 360px;
-  z-index: 1;
+.wp-auth {
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  background:
+    radial-gradient(900px 480px at 88% -8%, var(--wp-primary-soft), transparent 62%),
+    radial-gradient(720px 420px at -8% 108%, var(--wp-primary-soft), transparent 62%),
+    var(--wp-bg);
 }
 
-.wa-auth-logo-wrap {
-  width: 72px;
-  height: 72px;
-  padding: 14px;
-  margin-bottom: 20px;
-  border-radius: 18px;
-  background: #25d366;
+/* ---- Header ---- */
+
+.wp-auth__header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  padding-block: var(--wp-space-4);
 }
 
-.wa-auth-logo {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.wa-auth-title {
-  margin: 0 0 6px;
-  color: #fff;
-  font-size: 24px;
+.wp-auth__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wp-space-2);
+  color: var(--wp-text);
   font-weight: 700;
+  font-size: var(--wp-text-lg);
+  text-decoration: none;
+  border-radius: var(--wp-radius-sm);
 }
 
-.wa-auth-subtitle {
-  margin: 0 0 28px;
-  color: white;
-  font-weight: 400;
-  font-size: 13px;
+.wp-auth__brand-logo {
+  width: 32px;
+  height: 32px;
 }
 
-.wa-auth-form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+/* ---- Main + card ---- */
+
+.wp-auth__main {
+  flex: 1;
+  display: grid;
+  place-items: start center;
+  padding-block: var(--wp-space-4) var(--wp-space-7);
 }
 
-.wa-auth-input-group {
-  width: 100%;
+.wp-auth__card {
+  width: min(460px, 100%);
+  padding: var(--wp-space-6);
+  background: var(--wp-surface);
+  border: 1px solid var(--wp-border);
+  border-radius: var(--wp-radius-xl);
+  box-shadow: var(--wp-shadow-lg);
+  animation: wp-auth-in 420ms var(--wp-ease) both;
 }
 
-.wa-auth-label {
-  display: block;
-  margin-bottom: 6px;
-  color: white;
-  font-size: 12px;
-  font-weight: 500;
-  text-align: left;
-}
-
-.wa-auth-input {
-  width: 100%;
-  padding: 14px 16px;
-  border: 1.5px solid #2e3650;
-  border-radius: 12px;
-  background: #242b3d;
-  color: #fff;
-  font-size: 15px;
-  outline: none;
-  transition: 0.2s;
-  box-sizing: border-box;
-}
-
-.wa-auth-input::placeholder {
-  color: #4a5568;
-}
-
-.wa-auth-input:focus {
-  border-color: #25d366;
-  background: #1e2538;
-}
-
-.wa-auth-btn {
-  width: 100%;
-  min-height: 52px;
-  margin-top: 8px;
-  border: none;
-  border-radius: 28px;
-  background: #25d366;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.wa-auth-btn:hover:not(:disabled) {
-  background: #21c45d;
-}
-
-.wa-auth-btn:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
-.wa-auth-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.wa-signin{
-  width: 90px;
-  height: 90px;
-  display: block;
-  margin: 0 auto 24px;
-}
-
-
-.wa-auth-btn{
-  position: relative;
-}
-
-.wa-auth-loader{
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20px;
-  height: 20px;
-  border: 2.5px solid rgba(255,255,255,0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: spin 0.7s linear infinite;
-}
-
-@keyframes spin {
+@keyframes wp-auth-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
   to {
-    transform: translate(-50%, -50%) rotate(360deg);
+    opacity: 1;
+    transform: none;
   }
 }
 
-.wa-auth-signin-link {
-  margin-top: 24px;
-  font-size: 13px;
-  color: #8a95a8;
+.wp-auth__title {
+  font-size: var(--wp-text-xl);
+  font-weight: 700;
+  line-height: 1.25;
 }
 
-.wa-auth-link {
-  color: #25d366;
-  text-decoration: none;
+.wp-auth__subtitle {
+  margin-top: var(--wp-space-1);
+  color: var(--wp-text-muted);
+  font-size: var(--wp-text-sm);
+}
+
+/* ---- Form ---- */
+
+.wp-auth__form {
+  display: grid;
+  gap: var(--wp-space-4);
+  margin-top: var(--wp-space-5);
+}
+
+.wp-auth__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--wp-space-4);
+}
+
+.wp-field {
+  min-width: 0;
+}
+
+.wp-field .wp-label {
+  margin-bottom: 6px;
+}
+
+/* ---- Password input + eye ---- */
+
+.wp-auth__pw {
+  position: relative;
+}
+
+.wp-auth__pw-input {
+  padding-right: 52px;
+}
+
+.wp-auth__pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+}
+
+.wp-auth__pw-toggle:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.wp-auth__pw-toggle[aria-pressed="true"] {
+  color: var(--wp-primary);
+}
+
+/* ---- Strength meter ---- */
+
+.wp-strength {
+  --wp-strength-color: var(--wp-danger);
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows var(--wp-dur) var(--wp-ease),
+    opacity var(--wp-dur) var(--wp-ease);
+}
+
+.wp-strength[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.wp-strength[data-level="2"] {
+  --wp-strength-color: #f59e0b;
+}
+
+.wp-strength[data-level="3"] {
+  --wp-strength-color: #7cc242;
+}
+
+.wp-strength[data-level="4"] {
+  --wp-strength-color: var(--wp-green-400);
+}
+
+.wp-strength__inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.wp-strength__top {
+  display: flex;
+  align-items: center;
+  gap: var(--wp-space-3);
+  margin-top: var(--wp-space-3);
+}
+
+.wp-strength__bars {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.wp-strength__bar {
+  height: 6px;
+  border-radius: var(--wp-radius-pill);
+  background: var(--wp-border);
+  transition: background-color var(--wp-dur) var(--wp-ease);
+}
+
+.wp-strength__bar.is-on {
+  background: var(--wp-strength-color);
+}
+
+.wp-strength__label {
+  min-width: 52px;
+  text-align: right;
+  font-size: var(--wp-text-xs);
+  font-weight: 700;
+  color: var(--wp-strength-color);
+  transition: color var(--wp-dur) var(--wp-ease);
+}
+
+.wp-strength__rules {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--wp-space-1) var(--wp-space-3);
+  margin: var(--wp-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wp-strength__rule {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wp-text-xs);
+  color: var(--wp-text-muted);
+  transition: color var(--wp-dur) var(--wp-ease);
+}
+
+.wp-strength__tick {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--wp-border);
+  transition: background-color var(--wp-dur) var(--wp-ease),
+    border-color var(--wp-dur) var(--wp-ease),
+    transform var(--wp-dur) var(--wp-ease);
+}
+
+.wp-strength__tick svg {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: var(--wp-primary-contrast);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity var(--wp-dur-fast) var(--wp-ease);
+}
+
+.wp-strength__rule.is-met {
+  color: var(--wp-text);
+}
+
+.wp-strength__rule.is-met .wp-strength__tick {
+  background: var(--wp-primary);
+  border-color: var(--wp-primary);
+  transform: scale(1.08);
+}
+
+.wp-strength__rule.is-met .wp-strength__tick svg {
+  opacity: 1;
+}
+
+/* ---- Confirm match text ---- */
+
+.wp-match {
+  margin-top: var(--wp-space-2);
+  font-size: var(--wp-text-sm);
   font-weight: 600;
 }
 
-.wa-auth-link:hover {
+.wp-match--ok {
+  color: var(--wp-primary);
+}
+
+.wp-match--bad {
+  color: var(--wp-danger);
+}
+
+/* ---- Error box ---- */
+
+.wp-auth__alert {
+  padding: var(--wp-space-3) var(--wp-space-4);
+  border: 1px solid var(--wp-danger);
+  border-radius: var(--wp-radius-md);
+  background: color-mix(in srgb, var(--wp-danger) 10%, transparent);
+  color: var(--wp-danger);
+  font-size: var(--wp-text-sm);
+  font-weight: 600;
+}
+
+/* ---- Submit spinner ---- */
+
+.wp-auth__spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: wp-auth-spin 700ms linear infinite;
+}
+
+@keyframes wp-auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Divider, Google, footer link ---- */
+
+.wp-auth__divider {
+  display: flex;
+  align-items: center;
+  gap: var(--wp-space-3);
+  margin-block: var(--wp-space-5);
+  color: var(--wp-text-muted);
+  font-size: var(--wp-text-sm);
+}
+
+.wp-auth__divider::before,
+.wp-auth__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--wp-border);
+}
+
+.wp-auth__google {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.wp-auth__switch {
+  margin-top: var(--wp-space-5);
+  text-align: center;
+  color: var(--wp-text-muted);
+  font-size: var(--wp-text-sm);
+}
+
+.wp-auth__link {
+  color: var(--wp-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.wp-auth__link:hover {
   text-decoration: underline;
 }
 
 
+@media (max-width: 520px) {
+  .wp-auth__card {
+    padding: var(--wp-space-5);
+    border-radius: var(--wp-radius-lg);
+  }
 
-
-
-
-
-
-
-.wa-auth-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 20px 0 16px;
-  color: #8696a0;
-  font-size: 13px;
-}
-.wa-auth-divider::before,
-.wa-auth-divider::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: rgba(134, 150, 160, 0.3);
-}
-.wa-auth-google {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 8px;
+  .wp-auth__row {
+    grid-template-columns: 1fr;
+  }
 }

@@ -25,7 +25,7 @@ const generateToken=(userId:string,email:string)=>{
 
 export const signup=async(req:Request,res:Response,next:NextFunction):Promise<void>=>{
     try{
-        const {name,email,password}=req.body;
+        const {name,userName,email,password}=req.body;
         if(!name || !email || !password){
             res.status(400).json({
                 success:false,
@@ -44,6 +44,7 @@ export const signup=async(req:Request,res:Response,next:NextFunction):Promise<vo
         const hashPassword=await bcrypt.hash(password,10);
         const user=await User.create({
             name,
+            userName,
             email,
             password:hashPassword,
         });
