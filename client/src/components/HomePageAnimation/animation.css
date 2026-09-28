@@ -1,0 +1,619 @@
+.robot-mascot {
+  width: min(540px, 100%);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.robot-mascot:focus-visible {
+  outline: 3px solid #5eead4;
+  outline-offset: 6px;
+  border-radius: 24px;
+}
+
+.robot-art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Pivots are set in SVG coordinates so parts rotate around
+   their real joints (neck / shoulders), not their own center. */
+.head,
+.torso,
+.arm-left,
+.arm-right,
+.annoyed-bubble {
+  transform-box: view-box;
+}
+
+.head {
+  transform-origin: 280px 200px;
+}
+
+.arm-left {
+  transform-origin: 236px 242px;
+}
+
+.arm-right {
+  transform-origin: 324px 242px;
+}
+
+.torso {
+  transform-origin: 280px 300px;
+}
+
+.annoyed-bubble {
+  transform-origin: 176px 135px;
+}
+
+/* =========================
+   ROOM
+========================= */
+
+.floor-shadow {
+  fill: rgba(15, 23, 42, 0.16);
+}
+
+.chair-back {
+  fill: #243044;
+  stroke: #3b4a60;
+  stroke-width: 2;
+}
+
+/* =========================
+   ROBOT BODY
+========================= */
+
+.body {
+  fill: url(#rb-body);
+}
+
+.neck {
+  fill: #4a5b71;
+}
+
+.chest-led {
+  fill: #5eead4;
+  animation: ledPulse 2s ease-in-out infinite;
+}
+
+.antenna line {
+  stroke: #aebdca;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.antenna circle {
+  fill: #5eead4;
+  animation: ledPulse 2s ease-in-out infinite;
+}
+
+.ear {
+  fill: #c9d5df;
+  stroke: #a5b3c1;
+  stroke-width: 2;
+}
+
+.head-shell {
+  fill: url(#rb-head);
+  stroke: #b3c1ce;
+  stroke-width: 2.5;
+}
+
+.face-screen {
+  fill: url(#rb-screen);
+  stroke: #2c3d52;
+  stroke-width: 2;
+}
+
+.ear-light {
+  fill: #5eead4;
+}
+
+.eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink 5s infinite;
+}
+
+.eye ellipse {
+  fill: #5eead4;
+}
+
+.eye circle {
+  fill: #ffffff;
+  opacity: 0.9;
+}
+
+.robot-mouth {
+  fill: none;
+  stroke: #5eead4;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.angry-eyebrow {
+  fill: none;
+  stroke: #ff687d;
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0;
+}
+
+.angry-mouth {
+  fill: none;
+  stroke: #ff687d;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+/* =========================
+   ARMS
+========================= */
+
+.arm-outline {
+  fill: none;
+  stroke: #9fb0bf;
+  stroke-width: 20;
+  stroke-linecap: round;
+}
+
+.arm-fill {
+  fill: none;
+  stroke: #eaf0f5;
+  stroke-width: 15;
+  stroke-linecap: round;
+}
+
+.joint,
+.hand {
+  fill: #d3dde6;
+  stroke: #9fb0bf;
+  stroke-width: 2.5;
+}
+
+/* =========================
+   DESK + PROPS
+========================= */
+
+.desk-top {
+  fill: url(#rb-wood-top);
+}
+
+.desk-front {
+  fill: url(#rb-wood-front);
+}
+
+.desk-shine {
+  fill: rgba(255, 255, 255, 0.3);
+}
+
+.desk-drawer {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.18);
+  stroke-width: 2;
+}
+
+.desk-handle {
+  fill: #e6c9a2;
+}
+
+.mug-body {
+  fill: #f3f6f9;
+  stroke: #c4cfda;
+  stroke-width: 2;
+}
+
+.mug-band {
+  fill: #5eead4;
+  opacity: 0.85;
+}
+
+.mug-handle {
+  fill: none;
+  stroke: #c4cfda;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.steam {
+  fill: none;
+  stroke: #b9c7d8;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  animation: steam 2.4s ease-in-out infinite;
+}
+
+.steam-2 {
+  animation-delay: 1.2s;
+}
+
+.laptop-lid {
+  fill: url(#rb-lid);
+  stroke: #8896a5;
+  stroke-width: 2;
+}
+
+.laptop-logo {
+  fill: #5eead4;
+  animation: ledPulse 2s ease-in-out infinite;
+}
+
+.laptop-base {
+  fill: #8f9cab;
+  stroke: #6f7c8b;
+  stroke-width: 1.5;
+}
+
+/* =========================
+   CHAT BUBBLES
+========================= */
+
+.floating-chat {
+  animation: bubbleFloat 2.6s ease-in-out infinite;
+  transition: opacity 0.25s ease;
+}
+
+.bubble {
+  fill: #ffffff;
+}
+
+.bubble-dot {
+  fill: #34d399;
+}
+
+.bubble-title {
+  fill: #1e293b;
+  font: 700 12px system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+.bubble-sub {
+  fill: #7d8996;
+  font: 500 9px system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+.bubble-message {
+  fill: #d9f6ef;
+}
+
+.bubble-text {
+  fill: #3b4a57;
+  font: 600 10px system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  animation: msgIn 0.4s ease-out;
+}
+
+.typing-dot {
+  fill: #94a3b8;
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+
+.angry-shape {
+  fill: #fff1f2;
+}
+
+.annoyed-bubble text {
+  fill: #be123c;
+  font: 700 12px system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+.annoyed-bubble {
+  animation: popIn 0.22s ease-out;
+}
+
+/* =========================
+   MODE: CHATTING
+========================= */
+
+.robot-chatting .head {
+  animation: idleHead 2.7s ease-in-out infinite;
+}
+
+.robot-chatting .arm-left,
+.robot-chatting .arm-right {
+  animation: typingHand 0.19s ease-in-out infinite alternate;
+}
+
+.robot-chatting .arm-right {
+  animation-delay: -0.1s;
+}
+
+/* =========================
+   MODE: NOTICING
+========================= */
+
+.robot-noticing .head {
+  animation: lookAtUser 0.45s ease-out forwards;
+}
+
+.robot-noticing .arm-left,
+.robot-noticing .arm-right {
+  animation: pauseTyping 0.25s ease-out forwards;
+}
+
+/* =========================
+   MODE: ANNOYED
+========================= */
+
+.robot-annoyed .head {
+  animation: angryHead 0.22s ease-in-out infinite alternate;
+}
+
+.robot-annoyed .torso {
+  animation: angryBody 0.2s ease-in-out infinite alternate;
+}
+
+.robot-annoyed .arm-left,
+.robot-annoyed .arm-right {
+  animation: angryTyping 0.14s ease-in-out infinite alternate;
+}
+
+.robot-annoyed .arm-right {
+  animation-delay: -0.07s;
+}
+
+.robot-annoyed .floating-chat {
+  opacity: 0.35;
+}
+
+.robot-annoyed .eye {
+  animation: none;
+  transform: scaleY(0.7);
+}
+
+.robot-annoyed .eye circle {
+  opacity: 0.3;
+}
+
+.robot-annoyed .angry-eyebrow {
+  opacity: 1;
+}
+
+/* =========================
+   MODE: RETURNING
+========================= */
+
+.robot-returning .head {
+  animation: returnToLaptop 0.65s ease-out forwards;
+}
+
+.robot-returning .arm-left,
+.robot-returning .arm-right {
+  animation: returnArms 0.65s ease-out forwards;
+}
+
+/* =========================
+   HEART
+========================= */
+
+.heart-pop {
+  fill: #ff6b81;
+  font-size: 28px;
+  font-weight: 700;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: heartPop 0.9s ease-out forwards;
+}
+
+/* =========================
+   KEYFRAMES
+========================= */
+
+@keyframes idleHead {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-3px) rotate(1deg);
+  }
+}
+
+@keyframes typingHand {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pauseTyping {
+  from {
+    transform: translateY(-3px);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes lookAtUser {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(6deg) translateX(5px);
+  }
+}
+
+@keyframes angryHead {
+  from {
+    transform: rotate(-2.5deg) translateX(-2px);
+  }
+
+  to {
+    transform: rotate(2.5deg) translateX(2px);
+  }
+}
+
+@keyframes angryBody {
+  from {
+    transform: translateX(-1.5px);
+  }
+
+  to {
+    transform: translateX(1.5px);
+  }
+}
+
+@keyframes angryTyping {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes returnToLaptop {
+  from {
+    transform: rotate(6deg) translateX(5px);
+  }
+
+  to {
+    transform: rotate(0deg) translateX(0);
+  }
+}
+
+@keyframes returnArms {
+  from {
+    transform: translateY(-3px);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink {
+  0%,
+  45%,
+  49%,
+  53%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  47%,
+  51% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes ledPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes steam {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  40% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes bubbleFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes msgIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes typingBounce {
+  0%,
+  60%,
+  100% {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes heartPop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.5);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-35px) scale(1.15);
+  }
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 700px) {
+  .robot-mascot {
+    width: min(460px, 94vw);
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .robot-mascot * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
