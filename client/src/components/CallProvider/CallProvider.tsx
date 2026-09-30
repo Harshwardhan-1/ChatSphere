@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import axios from "axios";
 import { useCallHook } from "../../hooks/use.call.hook";
 import { env } from "../../configs/env.config";
@@ -30,7 +30,7 @@ const toImageUrl = (raw: unknown): string | null => {
 const pickImage = (u: any) => toImageUrl(u?.image || u?.profilePic || u?.avatar || u?.profileImage || u?.photo);
 
 
-export function CallProvider({ userId, children }: Props) {
+function CallProviderInner({ userId, children }: Props) {
   const call = useCallHook(userId);
   const { callStatus, incomingCall } = call;
 
@@ -52,9 +52,11 @@ export function CallProvider({ userId, children }: Props) {
     if (callStatus === "idle") setPeerInfo(null);
   }, [callStatus]);
 
-  // koi nayi call shuru / aayi -> purana notice hata do
+  // NAYA — purana notice tabhi hatao jab incoming call aaye ya call connect ho jaye.
+  // ("calling" pe mat hatao: server ka "offline" jawab kabhi kabhi is effect se pehle aa jata ha aur notice mit jata tha.
+  //  Nayi call shuru karne pe notice startCall me hi hat jata ha.)
   useEffect(() => {
-    if (callStatus !== "idle") setNotice(null);
+    if (callStatus === "ringing" || callStatus === "ongoing") setNotice(null);
   }, [callStatus]);
 
   // users list (name / image ke liye). Naya unknown user call kare to dobara fetch hota hai
@@ -93,6 +95,16 @@ export function CallProvider({ userId, children }: Props) {
   const peerRef = useRef(peer);
   peerRef.current = peer;
 
+  // NAYA — aakhri valid peer yaad rakho. call fail hote hi hook cleanup karke peerInfo null kar deta ha,
+  // tab notice me naam khaali aata tha ("Unknown" / "This user"). Isliye yahan se naam lete hain.
+  const lastPeerRef = useRef<CallPeer | null>(null);
+  if (peer.id) lastPeerRef.current = peer;
+
+  const getPeer = useCallback(
+    (): CallPeer => (peerRef.current.id ? peerRef.current : lastPeerRef.current ?? peerRef.current),
+    []
+  );
+
   // call khatam -> samne wale ka camera state reset
   useEffect(() => {
     if (callStatus === "idle") setPeerCamOff(false);
@@ -118,10 +130,13 @@ export function CallProvider({ userId, children }: Props) {
     [userId]
   );
 
-  const showNotice = useCallback((title: string, sub: string) => {
-    const p = peerRef.current;
-    setNotice({ title, sub, name: p.name, image: p.image, callType: p.callType });
-  }, []);
+  const showNotice = useCallback(
+    (title: string, sub: string) => {
+      const p = getPeer();
+      setNotice({ title, sub, name: p.name, image: p.image, callType: p.callType });
+    },
+    [getPeer]
+  );
 
   const resetHook = useCallback(() => {
     setTimeout(() => {
@@ -133,7 +148,7 @@ export function CallProvider({ userId, children }: Props) {
     const onFailed = (msg: unknown) => {
       const text = String(msg ?? "");
       const low = text.toLowerCase();
-      const name = peerRef.current.name || "This user";
+      const name = getPeer().name || "This user";
 
       if (low.includes("already on another call")) return; // chalti call ko mat chhedo
 
@@ -156,18 +171,18 @@ export function CallProvider({ userId, children }: Props) {
       socket.off("call_failed", onFailed);
       socket.off("call_error", onError);
     };
-  }, [showNotice, resetHook]);
+  }, [showNotice, resetHook, getPeer]);
 
   // samne wala uthaye nahi -> 45 sec baad call khud kat jaaye
   useEffect(() => {
     if (callStatus !== "calling") return;
     const t = setTimeout(() => {
-      const name = peerRef.current.name || "This user";
+      const name = getPeer().name || "This user";
       showNotice("No answer", `${name} didn't pick up.`);
       resetHook();
     }, NO_ANSWER_MS);
     return () => clearTimeout(t);
-  }, [callStatus, showNotice, resetHook]);
+  }, [callStatus, showNotice, resetHook, getPeer]);
 
   // notice apne aap band
   useEffect(() => {
@@ -202,4 +217,12 @@ export function CallProvider({ userId, children }: Props) {
       <CallScreen />
     </CallContext.Provider>
   );
+}
+
+// NAYA — agar upar pehle se koi CallProvider ha (jaise App.tsx wala), toh andar wala kuch nahi banata,
+// bas children dikhata ha. Isse do providers ek saath kabhi nahi chalenge (double call screen / "Unknown" bug).
+export function CallProvider(props: Props) {
+  const parent = useContext(CallContext);
+  if (parent) return <>{props.children}</>;
+  return <CallProviderInner {...props} />;
 }

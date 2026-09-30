@@ -1,5 +1,5 @@
-import {Routes,Route} from 'react-router-dom';
-import { lazy,Suspense } from 'react';
+import { Routes, Route, Outlet } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { useEffect } from 'react';
 import { socket } from './utils/socket';
 import { Stories } from './components/Stories/stories';
@@ -8,6 +8,9 @@ import { ChannelChat } from './pages/Chat/channelChat';
 import { NearByChat } from './pages/Chat/NearByChat';
 import { Docs } from './pages/Chat/Docs';
 import { ChatWithAi } from './components/ChatWithAi/ChatWithAi';
+import { ShowAllUser } from './hooks/usechat.hooks';
+// NOTE: apne project ke hisaab se is import ka path sahi kar lena (jahan CallProvider file rakhi ha)
+import { CallProvider } from './components/CallProvider/CallProvider';
 import "./App.css";
 
 const RegisterPage=lazy(()=>import("./pages/Auth/signup"));
@@ -29,6 +32,41 @@ const LoadingScreen = () => (
   </div>
 );
 
+// NAYA — login ke baad wale saare pages (chat, group, docs, story...) is layout ke andar aate hain.
+// CallProvider yahan ek hi baar mount hota ha, isliye:
+//  1) kisi bhi page pe incoming call dikhega
+//  2) ek page se dusre page pe jaane par call kategi nahi
+const CallLayout = () => {
+  const { userData } = ShowAllUser();
+  const userId = userData?.loginUserId;
+
+  // user kisi bhi page pe ho, server ko batao ki wo online ha (pehle ye sirf ChatListPage karta tha)
+  useEffect(() => {
+    if (!userId) return;
+
+    const announce = () => {
+      socket.emit("join", userId);
+      socket.emit("user_online", { userId });
+    };
+
+    announce();
+    socket.on("connect", announce); // reconnect pe bhi
+
+    return () => {
+      socket.off("connect", announce);
+    };
+  }, [userId]);
+
+  // userId abhi load nahi hua toh pages waise hi chalen jaise pehle chalte the
+  if (!userId) return <Outlet />;
+
+  return (
+    <CallProvider userId={userId}>
+      <Outlet />
+    </CallProvider>
+  );
+};
+
 
 function App() {
 
@@ -47,13 +85,17 @@ function App() {
         <Route path='/signup' element={<RegisterPage/>}></Route>
         <Route path='/login' element={<Login/>}></Route>
         <Route path='/' element={<HomePage />}></Route>
-        <Route path='/chat' element={<ChatLayout />}></Route>
-        <Route path='/story' element={<Stories />}></Route>
-        <Route path='/group' element={<GroupChat />}></Route>
-        <Route path='/channel' element={<ChannelChat />}></Route>
-        <Route path='/NearByChats' element={<NearByChat />}></Route>
-        <Route path='/docs' element={<Docs />}></Route>
-        <Route path='/AiChat' element={<ChatWithAi />}></Route>
+
+        {/* login ke baad wale pages — sab CallProvider ke andar */}
+        <Route element={<CallLayout />}>
+          <Route path='/chat' element={<ChatLayout />}></Route>
+          <Route path='/story' element={<Stories />}></Route>
+          <Route path='/group' element={<GroupChat />}></Route>
+          <Route path='/channel' element={<ChannelChat />}></Route>
+          <Route path='/NearByChats' element={<NearByChat />}></Route>
+          <Route path='/docs' element={<Docs />}></Route>
+          <Route path='/AiChat' element={<ChatWithAi />}></Route>
+        </Route>
       </Routes>
       </Suspense>
     </>
@@ -61,11 +103,3 @@ function App() {
 }
 
 export default App
-
-
-
-//new task
-//1 add pin option
-//2 add smile option
-//3 add group chat
-//4 add people in group using qr
