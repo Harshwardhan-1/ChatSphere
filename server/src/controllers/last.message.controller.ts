@@ -3,13 +3,25 @@ import { lastMessage } from '../models/conversion.model';
 import { personalChat } from '../models/chat.model';
 
 
+
+export const getMessageLabel = (messageType?: string, message?: string): string => {
+    if (!messageType) return message || "";
+    switch (messageType) {
+        case "text":
+        case "system":
+            return message || "";
+        case "pdf":
+            return "pdf";
+            case "call":
+            return message || "Call";
+        default:
+            return "file";
+    }
+};
+
 const getDisplayText = (msg: any) => {
     if (!msg) return "";
-    if (msg.messageType === "text") {
-        return msg.message || "";
-    }
-    // image, video, pdf, audio, file — in sab me caption text nahi hota
-    return msg.orignalname || msg.message || "";
+    return getMessageLabel(msg.messageType, msg.message);
 };
 
 export const store_last_message=async(data:{senderId:string,receiverId:string,msg:string,messageType:string,originalname?:string})=>{
@@ -26,23 +38,20 @@ export const store_last_message=async(data:{senderId:string,receiverId:string,ms
                 },
             ],
         });
-        let lastmessage="";
-        if(data?.messageType && data.messageType!=="text"){
-          lastmessage=data?.originalname || data.msg || "";
-        }else{
-          lastmessage=data.msg;
-}
+        // file ho toh naam nahi, "File" / "Image" jaisa label store hoga
+        const lastmessage=getMessageLabel(data.messageType,data.msg);
+
         if(findLastMessage){
             findLastMessage.lastmessage=lastmessage;
             findLastMessage.messageType=data.messageType;
-            findLastMessage.clearBy=[],
+            findLastMessage.clearBy=[];
             await findLastMessage.save();
             return findLastMessage;
         }else{
             const createLastMessage=await lastMessage.create({
                 senderId:data.senderId,
                 receiverId:data.receiverId,
-                lastmessage:data.msg,
+                lastmessage:lastmessage,
                 messageType:data.messageType,
             });
             if(createLastMessage){
@@ -71,7 +80,7 @@ export const storeLastMessageForwardMessage=async(data:{senderId:string,receiver
         }).sort({createdAt:-1});
 
 
-        
+
         if(findLastMessage){
             const lastmsg = getDisplayText(findLastMessage);
             const lastMsg=await lastMessage.findOne({
@@ -85,11 +94,11 @@ export const storeLastMessageForwardMessage=async(data:{senderId:string,receiver
                 lastMsg.messageType=findLastMessage.messageType;
                 lastMsg.createdAt=findLastMessage.createdAt;
                 lastMsg.updatedAt=findLastMessage.updatedAt;
-                lastMsg.clearBy=[],
+                lastMsg.clearBy=[];
                 await lastMsg.save();
                 return lastMsg;
             }else{
-                 const createLastMessage=await lastMessage.create({
+                const createLastMessage=await lastMessage.create({
                 senderId:data.senderId,
                 receiverId:data.receiverId,
                 lastmessage:lastmsg,
@@ -142,10 +151,12 @@ try{
         const isClearByThisUser=findLastMessage[i].clearBy?.includes(data.userId);
         const displayMsg = getDisplayText(findLastChat);
         response.push({
-        senderId,
-        receiverId,
+        // IMPORTANT: asli last message bhejne wale ki id (pehle conversation banane wale ki id jaa rhi thi,
+        // isse "isMine" / tick galat aata tha)
+        senderId: findLastChat.senderId,
+        receiverId: findLastChat.receiverId,
         lastmessage: isClearByThisUser?"":displayMsg,
-        messageType:findLastMessage[i].messageType,
+        messageType:findLastChat.messageType,
         IsSend: findLastChat?.IsSend,
         isDelivered: findLastChat?.isDelivered,
         isSeen: findLastChat?.isSeen,
@@ -169,7 +180,7 @@ try{
 
 
 
-//delete for everyone  
+//delete for everyone
 //1 first find last message of both the user
 //2 from conversational model update the last message and send to frontend/client
 export const  update_chat_list=async(data:{senderId:string,receiverId:string})=>{
@@ -185,7 +196,7 @@ export const  update_chat_list=async(data:{senderId:string,receiverId:string})=>
         },],
         messageType:{$nin:["system"]}
         }).sort({createdAt:-1});
-        
+
 
             const findLastConversation=await lastMessage.findOne({
                 $or:[{
@@ -217,14 +228,18 @@ export const  update_chat_list=async(data:{senderId:string,receiverId:string})=>
             };
         }
 
-                findLastConversation.lastmessage=findLastMessage.message;
+                // file ka path nahi, label store karo
+                findLastConversation.lastmessage=getDisplayText(findLastMessage);
                 findLastConversation.messageType=findLastMessage?.messageType;
                 await findLastConversation.save();
                 return{
-                    senderId: findLastConversation.senderId,
-                    receiverId: findLastConversation.receiverId,
+                    senderId: findLastMessage.senderId,
+                    receiverId: findLastMessage.receiverId,
                     lastmessage: findLastConversation.lastmessage,
                     messageType: findLastConversation.messageType,
+                    IsSend: findLastMessage.IsSend,
+                    isDelivered: findLastMessage.isDelivered,
+                    isSeen: findLastMessage.isSeen,
                     createdAt:findLastMessage.createdAt,
                     updatedAt: findLastMessage.updatedAt,
                 }
@@ -242,7 +257,6 @@ export const  update_chat_list=async(data:{senderId:string,receiverId:string})=>
 //for edit user edit it
 export const update_chat_list_edit=async(data:{_id:string,senderId:string,receiverId:string,msg:string})=>{
 try{
-    console.log(data);
     const findLastMessage=await personalChat.findOne({
         $or:[{
             senderId:data.senderId,
@@ -254,7 +268,6 @@ try{
         },
     ]
 }).sort({createdAt:-1});
-console.log(findLastMessage);
     const messageId=findLastMessage?._id.toString();
     if(messageId===data._id.toString()){
         //latest message only it is we need to update chat list now
@@ -285,22 +298,19 @@ console.log(findLastMessage);
                 updatedAt: previousUpdatedAt,
             };
         }
-        if(findLastConversation){
-            console.log("finded conversation");
-            findLastConversation.lastmessage=data.msg;
-            await findLastConversation.save();
-            return{
-                senderId:findLastConversation.senderId,
-                receiverId:findLastConversation.receiverId,
-                lastmessage:findLastConversation.lastmessage,
-                messageType:findLastConversation.messageType,
-                createdAt:findLastConversation.createdAt,
-                updatedAt:findLastConversation.updatedAt,
+        findLastConversation.lastmessage=data.msg;
+        await findLastConversation.save();
+        return{
+            // edit hua message hi last message ha, isliye uska sender
+            senderId:findLastMessage.senderId,
+            receiverId:findLastMessage.receiverId,
+            lastmessage:findLastConversation.lastmessage,
+            messageType:findLastConversation.messageType,
+            createdAt:findLastConversation.createdAt,
+            updatedAt:findLastConversation.updatedAt,
         }
-   }else{
+    }
     return null;
-   }
-}
 }catch(err){
     throw new Error("error occured in saving");
 }

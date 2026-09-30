@@ -7,7 +7,7 @@ import { currentDisapperingVal } from "../controllers/profile.controller";
 import { PersonalChat } from "../controllers/chat.controller";
 import { changeNotificationSetting, prev_mark_notification } from "../controllers/notification.controller";
 import { unmarked_as_favourites } from "../controllers/profile.controller";
-import { iso } from "zod";
+import { all_favourites } from "../controllers/profile.controller";
 
 
 export const profileSocket=(socket:Socket,users:{[key:string]:string},io:Server)=>{
@@ -160,6 +160,15 @@ try{
         }
     });
     
+    socket.on("get_all_favourites",async(data:{userId:string})=>{
+    try{
+        const ids=await all_favourites({senderId:data.userId});
+        socket.emit("all_favourites",ids);
+    }catch(err){
+        const error=err instanceof Error?err.message:"Unknown Error";
+        socket.emit("error_msg",error);
+    }
+});
 
     //pin message
     socket.on("pin_message",async(data:{_id:string,senderId:string,receiverId:string})=>{

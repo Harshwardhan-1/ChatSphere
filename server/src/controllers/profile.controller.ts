@@ -6,6 +6,8 @@ import { disappearingModel } from "../models/disappearing.message.model";
 import { favourites } from "../models/favourites.model";
 import { notification } from "../models/mute.notification.model";
 import { durationtoMs } from "../helper/durationtoMs";
+import { User } from "../models/user.model";
+import { Socket,Server } from "socket.io";
 
 
 
@@ -221,6 +223,18 @@ export const unmarked_as_favourites=async(data:{senderId:string,receiverId:strin
 
 
 
+export const all_favourites=async(data:{senderId:string})=>{
+    try{
+        const list=await favourites.find({senderId:data.senderId,IsMarkedAsFavourites:true});
+        const id:string[]=[];
+        for(let i=0;i<list.length;i++){
+            id.push(list[i].receiverId.toString());
+        }
+        return id;
+    }catch(err){
+        throw new Error("failed to get favourites");
+    }
+}
 
 
 
@@ -323,5 +337,42 @@ export const allPinnedMessage=async(data:{senderId:string,receiverId:string})=>{
         return allMessages;
     }catch(err){
         throw new Error("failed to load pinned message");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+//the msg is basically the path
+export const changeProfileImage=async(data:
+    {senderId:string,msg:string},
+    socket:Socket,io:Server,users:{[key:string]:string}
+)=>{
+    try{
+        const user=await User.findById(data.senderId);
+        if(!user){
+            throw new Error("user not found");
+        }
+        user.avatar=data.msg;
+        await user.save();
+        const allUser=await User.find();
+
+        for(let i=0;i<allUser.length;i++){
+            const id=allUser[i].toString();
+            const receiverSocketId=users[id];
+            if(receiverSocketId){
+                io.to(receiverSocketId).emit("profile_pic_changed",({senderId:data.senderId,receiverId:id}))
+            }
+        }
+    }catch(err){
+        throw err;
     }
 }

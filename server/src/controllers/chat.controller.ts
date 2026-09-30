@@ -72,6 +72,7 @@ try{
     
     //check notification sound
     const sound=await notificationSound(data.senderId,data.receiverId);
+   
 
 
     const createIt=await personalChat.create({

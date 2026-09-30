@@ -1,232 +1,385 @@
+.chatPage__container {
+  position: relative;
+  height: 100dvh;
+  display: flex;
+  background: var(--wp-bg);
+}
+
 .chatPage {
-  width: 400px;
-  height: 100vh;
-  background: #f0f2f5;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--wp-surface);
+  border-right: 1px solid var(--wp-border);
   overflow: hidden;
 }
 
+/* ---- Header ---- */
 .chatPage__header {
-  height: 64px;
-  padding: 0 16px;
+  flex-shrink: 0;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--wp-space-3);
+  padding: var(--wp-space-3) var(--wp-space-4);
+  border-bottom: 1px solid var(--wp-border);
+}
+
+.chatPage__brand {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  padding: 4px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.chatPage__brand:hover {
+  background: var(--wp-primary-soft);
+}
+
+.chatPage__brandLogo {
+  width: 28px;
+  height: 28px;
+}
+
+.chatPage__headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--wp-space-2);
+}
+
+.chatPage__menuBtn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--wp-text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: default;
+  transition: background-color 120ms var(--wp-ease, ease),
+    color 120ms var(--wp-ease, ease);
 }
 
 .chatPage__profile {
-  width: 42px;
-  height: 42px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: #ec4899;
-  color: white;
+  background: var(--wp-primary);
+  color: var(--wp-primary-contrast);
+  font-weight: 700;
+  font-size: var(--wp-text-sm);
+  flex-shrink: 0;
+}
+
+/* ---- Search + filter chips ---- */
+.chatPage__searchWrapper {
+  flex-shrink: 0;
+  padding: var(--wp-space-3) var(--wp-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wp-space-3);
+  border-bottom: 1px solid var(--wp-border);
+}
+
+.chatPage__searchBox {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-weight: 600;
 }
 
-.chatPage__icons {
-  display: flex;
-  gap: 18px;
-  font-size: 20px;
-  color: #54656f;
+.chatPage__searchIcon {
+  position: absolute;
+  left: var(--wp-space-3);
+  display: grid;
+  place-items: center;
+  color: var(--wp-text-muted);
+  pointer-events: none;
 }
 
-.chatPage__searchWrapper {
-  padding: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.chatPage__searchIcon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .chatPage__searchInput {
   width: 100%;
-  padding: 12px 10px;
+  min-height: 40px;
+  padding: 0 var(--wp-space-3) 0 40px;
   border: none;
+  border-radius: var(--wp-radius-pill);
+  background: var(--wp-bg);
+  color: var(--wp-text);
+  font: inherit;
+  font-size: var(--wp-text-sm);
+  transition: box-shadow 160ms ease;
+}
+
+.chatPage__searchInput::placeholder {
+  color: var(--wp-text-muted);
+}
+
+.chatPage__searchInput:focus {
   outline: none;
-  border-radius: 10px;
-  background: white;
-  margin-bottom: 8px;
+  box-shadow: 0 0 0 2px var(--wp-primary-soft);
 }
 
-.chatPage__searchWrapper button {
-  border: none;
-  outline: none;
-  padding: 8px 14px;
-  border-radius: 18px;
-  background: white;
-  color: #54656f;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid #d1d7db;
+/* Horizontally scrollable chip strip, scrollbar hidden cross-browser */
+.chatPage__filters {
+  display: flex;
+  align-items: center;
+  gap: var(--wp-space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.chatPage__searchWrapper button:hover {
-  background: #e7fce3;
-  color: #008069;
-  border-color: #008069;
-}
-
-.chatPage__searchWrapper button:first-of-type {
-  background: #d9fdd3;
-  color: #008069;
-  border-color: #008069;
-}
-
-.chatPage__userList {
-  height: calc(100vh - 120px);
-  overflow-y: auto;
-}
-.chatPage__userList::-webkit-scrollbar {
+.chatPage__filters::-webkit-scrollbar {
   display: none;
 }
 
-.chatPage__userList {
-  height: calc(100vh - 120px);
-  overflow-y: auto;
-  padding-bottom: 52px;
-  box-sizing: border-box;
+.chatPage__filterChip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 var(--wp-space-3);
+  border: none;
+  border-radius: var(--wp-radius-pill);
+  background: var(--wp-bg);
+  color: var(--wp-text);
+  font: inherit;
+  font-size: var(--wp-text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
+.chatPage__filterChip svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chatPage__filterChip:hover {
+  background: var(--wp-primary-soft);
+}
+
+.chatPage__filterChip.is-active {
+  background: var(--wp-primary);
+  color: var(--wp-primary-contrast);
+}
+
+.chatPage__filterChip--nav {
+  color: var(--wp-text-muted);
+}
+
+.chatPage__filterDivider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 20px;
+  background: var(--wp-border);
+  margin-inline: 2px;
+}
+
+/* ---- User list ---- */
+.chatPage__userList {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.chatPage__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wp-space-3);
+  padding: var(--wp-space-7) var(--wp-space-4);
+  color: var(--wp-text-muted);
+  font-size: var(--wp-text-sm);
+  text-align: center;
+}
+
+.chatPage__emptyIcon svg {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
 
 .chatPage__userCard {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px;
-  background: white;
-  border-bottom: 1px solid #e9edef;
+  gap: var(--wp-space-3);
+  padding: var(--wp-space-3) var(--wp-space-4);
   cursor: pointer;
+  border-bottom: 1px solid var(--wp-border);
+  transition: background-color 120ms ease;
 }
 
 .chatPage__userCard:hover {
-  background: #f5f6f6;
+  background: var(--wp-bg);
+}
+
+.chatPage__userCard.is-active {
+  background: var(--wp-primary-soft);
 }
 
 .chatPage__avatar {
-  width: 52px;
-  height: 52px;
-  min-width: 52px;
-  border-radius: 50%;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
   position: relative;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: var(--wp-text-sm);
 }
 
 .chatPage__onlineDot {
   position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 12px;
-  height: 12px;
+  right: 0;
+  bottom: 0;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
-  background: #25d366;
-  border: 2px solid white;
+  background: #31d383;
+  border: 2px solid var(--wp-surface);
 }
 
 .chatPage__content {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chatPage__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wp-space-2);
 }
 
 .chatPage__name {
   margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-  color: #111b21;
-  text-align: left;
-}
-
-
-
-
-
-
-
-
-.chatPage__container {
-  display: flex;
-  height: 100vh;
-  width: 100%;
-}
-
-.right_side {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #f8f9fa;
-}
-
-.right_side img {
-  width: 100px;
-  max-width: 80%;
-  margin-bottom: 20px;
-  opacity: 0.9;
-}
-
-.right_side p {
-  font-size: 16px;
-  color: #667781;
+  font-size: var(--wp-text-md);
   font-weight: 600;
+  color: var(--wp-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-@media (max-width: 768px) {
-  .chatPage__container {
-    flex-direction: column;
-  }
-
-  .chatPage {
-    width: 100%;
-    height: 60vh;
-  }
-
-  .right_side {
-    height: 40vh;
-  }
+.chatPage__time {
+  flex-shrink: 0;
+  font-size: var(--wp-text-xs);
+  color: var(--wp-text-muted);
 }
 
-
-
-.noChatsFound{
-  text-align:center;
-  padding:30px;
-  color:#667781;
-  font-weight:500;
+.chatPage__preview {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--wp-text-sm);
+  color: var(--wp-text-muted);
 }
 
+.chatPage__previewText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-.unread-badge {
-  width: 22px;
-  height: 22px;
-  background: #25D366;
-  color: #fff;
+.chatPage__tick {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--wp-text-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chatPage__tick.is-seen {
+  stroke: var(--wp-tick-read, #53bdeb);
+}
+
+.chatPage__badge {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--wp-radius-pill);
+  background: var(--wp-primary);
+  color: var(--wp-primary-contrast);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+/* ---- Floating AI button (kept out of the chat screen itself) ---- */
+.chatPage__aiFab {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: none;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  margin-left: auto;
+  color: #ffffff;
+  background: linear-gradient(135deg, #00a884, #25d366 55%, #53bdeb);
+  box-shadow: var(--wp-shadow-lg, 0 10px 24px rgba(0, 168, 132, 0.4));
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
-.unread-badge {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  background: #25D366;
-  color: white;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
+.chatPage__aiFab:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 14px 28px rgba(0, 168, 132, 0.45);
+}
+
+.chatPage__aiFab:active {
+  transform: scale(0.96);
+}
+
+.chatPage__previewIcon {
+  margin-right: 4px;
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatPage__userCard,
+  .chatPage__filterChip,
+  .chatPage__menuBtn,
+  .chatPage__aiFab {
+    transition: none;
+  }
 }

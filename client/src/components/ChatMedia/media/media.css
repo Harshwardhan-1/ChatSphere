@@ -1,100 +1,126 @@
-.mediaPage {
+.wpm-page {
     position: absolute;
     top: 0;
     right: 0;
     width: 400px;
+    max-width: 100%;
     height: 99%;
-    background: white;
+    background: var(--wp-surface, #ffffff);
     z-index: 1000;
+    box-shadow: var(--wp-shadow-lg, -8px 0 24px rgba(0, 0, 0, 0.2));
 
     display: flex;
     flex-direction: column;
+
+    animation: wpm-slide-in 180ms ease both;
 }
 
-
-.mediaHeader {
+.wpm-header {
     height: 60px;
-    background: #008069;
-    color: white;
+    flex-shrink: 0;
+    background: var(--wp-primary, #008069);
+    color: var(--wp-primary-contrast, #ffffff);
 
     display: flex;
     align-items: center;
 
     padding: 0 20px;
     gap: 20px;
-
-    flex-shrink: 0;
 }
 
-.mediaHeader h2 {
+.wpm-header h2 {
     margin: 0;
     font-size: 20px;
     font-weight: 500;
 }
 
-.mediaHeader .backArrow {
-    font-size: 30px;
+.wpm-header .wpm-back {
+    font-size: 26px;
+    line-height: 1;
     cursor: pointer;
+    transition: transform 120ms ease;
 }
 
+.wpm-header .wpm-back:hover {
+    transform: translateX(-2px);
+}
 
-
-.mediaGrid {
+.wpm-grid {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--wp-surface, #ffffff);
 
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-content: start;
     gap: 3px;
     padding: 3px;
-
-    align-content: start;
 }
 
-.mediaGrid::-webkit-scrollbar {
+.wpm-grid::-webkit-scrollbar {
     width: 6px;
 }
 
-.mediaGrid::-webkit-scrollbar-thumb {
-    background: #d1d7db;
+.wpm-grid::-webkit-scrollbar-thumb {
+    background: var(--wp-border, #d1d7db);
     border-radius: 10px;
 }
 
-.mediaThumb {
+.wpm-thumb {
+    width: 100%;
     aspect-ratio: 1 / 1;
     overflow: hidden;
     cursor: pointer;
     position: relative;
-    background: #e9edef;
+    background: var(--wp-bg, #e9edef);
+    transition: opacity 120ms ease;
 }
 
-.mediaThumb img,
-.mediaThumb video {
+.wpm-thumb:hover {
+    opacity: 0.88;
+}
+
+.wpm-thumb--broken {
+    display: grid;
+    place-items: center;
+}
+
+.wpm-thumb--broken::after {
+    content: "🖼";
+    font-size: 22px;
+    opacity: 0.35;
+}
+
+.wpm-thumb img,
+.wpm-thumb video {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.videoThumbWrap {
+.wpm-video-wrap {
     position: relative;
     width: 100%;
     height: 100%;
 }
 
-.playIcon {
+.wpm-play {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
 
-    color: white;
+    color: #ffffff;
     font-size: 22px;
-    text-shadow: 0 0 4px rgba(0,0,0,0.8);
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
 
 
-.mediaPreviewOverlay {
+.wpm-preview-overlay {
     position: fixed;
     inset: 0;
     background: #000;
@@ -104,7 +130,7 @@
     flex-direction: column;
 }
 
-.mediaPreviewTop {
+.wpm-preview-top {
     height: 60px;
     flex-shrink: 0;
 
@@ -114,21 +140,24 @@
 
     padding: 0 20px;
 
-    background: rgba(0,0,0,0.6);
-    color: white;
+    background: rgba(0, 0, 0, 0.6);
+    color: #ffffff;
 }
 
-.mediaPreviewTop .backArrow {
-    font-size: 26px;
+.wpm-preview-top .wpm-back {
+    font-size: 24px;
     cursor: pointer;
 }
 
-.mediaPreviewName {
+.wpm-preview-name {
     font-size: 15px;
     color: #d1d7db;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.mediaPreviewContent {
+.wpm-preview-content {
     flex: 1;
 
     display: flex;
@@ -138,8 +167,8 @@
     overflow: hidden;
 }
 
-.mediaPreviewContent img,
-.mediaPreviewContent video {
+.wpm-preview-content img,
+.wpm-preview-content video {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
@@ -147,7 +176,7 @@
 
 
 
-.noMediaFound {
+.wpm-empty {
     grid-column: 1 / -1;
 
     display: flex;
@@ -156,6 +185,29 @@
 
     height: 300px;
 
-    color: #667781;
+    color: var(--wp-text-muted, #667781);
     font-size: 15px;
+}
+
+@keyframes wpm-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wpm-page {
+        animation: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .wpm-page {
+        width: 100%;
+    }
 }

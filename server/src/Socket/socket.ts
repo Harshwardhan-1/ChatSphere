@@ -35,20 +35,20 @@ export const userChat=(server:httpServer,FRONTEND_URL:string)=>{
     origin:FRONTEND_URL,
     methods:["POST","GET","DELETE","PUT"],
     credentials:true,
-  }  
+  }
 });
 let activeChats:Record<string,string>={};
 let activeGroupChats:Record<string,string>={};
 const activeChannels:Record<string,string>={};
 let activeDocs:Record<string,string>={};
 
-//community record 
+//community record
 //community record,senderId
 let communityRecord:Record<string,string>={};
 
 //end of community record
-//we will initialize it when we place call because if someone else place the call to 
-//same person we will emit sound like on another call busy 
+//we will initialize it when we place call because if someone else place the call to
+//same person we will emit sound like on another call busy
 let activeCalls:Record<string,{with:string,status:string}>={};
 io.on('connection',(socket)=>{
     console.log("connected:",socket.id);
@@ -56,7 +56,7 @@ io.on('connection',(socket)=>{
     socket.on("join",(userId:string)=>{
         users[userId]=socket.id;
         io.emit("trigger_status",{userId,status:"online"});
-        console.log("joined",userId)  
+        console.log("joined",userId)
     });
     profileSocket(socket,users,io);
     emojiOnMessages(socket,users,io);
@@ -74,7 +74,7 @@ io.on('connection',(socket)=>{
     socket.on("active_user",(data:{senderId:string,receiverId:string})=>{
         activeChats[data.senderId]=data.receiverId;
     });
-  
+
 
     socket.on("active_group_user",(data:{senderId:string,groupId:string})=>{
         activeGroupChats[data.senderId]=data.groupId;
@@ -94,7 +94,7 @@ io.on('connection',(socket)=>{
     socket.on("active_channel_user",(data:{channelId:string,senderId:string})=>{
         activeChannels[data.senderId]=data.channelId;
     });
-    
+
 
     socket.on("not_active_channel_user",(data:{channelId:string,senderId:string})=>{
         delete activeChannels[data.senderId];
@@ -104,36 +104,61 @@ io.on('connection',(socket)=>{
     socket.on("send_message",async(data)=>{
         try{
         const savedMessage=await PersonalChat(data);
-       const update_last_message=await store_last_message({senderId:data.senderId,receiverId:data.receiverId,msg:data.msg,messageType:data.messageType,originalname:savedMessage?.originalname});
-       const receiverSocketId=users[data.receiverId];
+        const update_last_message=await store_last_message({senderId:data.senderId,receiverId:data.receiverId,msg:data.msg,messageType:data.messageType,originalname:savedMessage?.originalname});
+        const receiverSocketId=users[data.receiverId];
+        const isSelfChat=data.senderId===data.receiverId;
+
+        const buildChatListPayload=(status:{IsSend:boolean,isDelivered:boolean,isSeen:boolean})=>{
+            if(!update_last_message)return null;
+            return {
+                ...update_last_message.toObject(),
+                senderId:data.senderId,
+                receiverId:data.receiverId,
+                ...status,
+            };
+        };
+
+        if(isSelfChat){
+            socket.emit("receive_message",savedMessage);
+            const markSeen=await markIsSeen({_id:savedMessage._id,senderId:savedMessage.senderId,receiverId:savedMessage.receiverId});
+            socket.emit("real_time_isSeen",{messageId:markSeen?._id,senderId:markSeen?.senderId,receiverId:markSeen?.receiverId,isSeen:markSeen?.isSeen});
+            const selfPayload=buildChatListPayload({IsSend:true,isDelivered:true,isSeen:true});
+            if(selfPayload){
+                socket.emit("chat_list_update",selfPayload);
+            }
+            return;
+        }
+
         if(receiverSocketId){
             io.to(receiverSocketId).emit("receive_message",savedMessage);
-            //check if user is on current receiverId char or not 
+            let status={IsSend:true,isDelivered:true,isSeen:false};
             if(activeChats[data.receiverId]===data.senderId){
                 socket.emit("receive_message",savedMessage);
                const markSeen=await markIsSeen({_id:savedMessage._id,senderId:savedMessage.senderId,receiverId:savedMessage.receiverId});
                socket.emit("real_time_isSeen",{messageId:markSeen?._id,senderId:markSeen?.senderId,receiverId:markSeen?.receiverId,isSeen:markSeen?.isSeen});
+               status={IsSend:true,isDelivered:true,isSeen:true};
             }else{
             socket.emit("receive_message",savedMessage);
             const msgDeliveredTick=await isDelivered({_id:savedMessage._id,senderId:savedMessage.senderId,receiverId:savedMessage.receiverId});
-            socket.emit("isDelivered",{messageId:msgDeliveredTick._id,senderId:msgDeliveredTick.senderId,receiverId:msgDeliveredTick.receiverId,isDelivered:msgDeliveredTick.isDelivered})    
-            // to increase unseen count number 
+            socket.emit("isDelivered",{messageId:msgDeliveredTick._id,senderId:msgDeliveredTick.senderId,receiverId:msgDeliveredTick.receiverId,isDelivered:msgDeliveredTick.isDelivered})
+            // to increase unseen count number
             io.to(receiverSocketId).emit("increase_unseen_count",{senderId:data.senderId});
         }
             //chat list update
-            if(update_last_message){
-                io.to(receiverSocketId).emit("chat_list_update",update_last_message);
-            }
-            if(update_last_message){
-                socket.emit("chat_list_update",update_last_message);
+            const payload=buildChatListPayload(status);
+            if(payload){
+                io.to(receiverSocketId).emit("chat_list_update",payload);
+                socket.emit("chat_list_update",payload);
             }
             //chat list update end
         }else{
+          // receiver offline: sirf single tick (sent), delivered nahi
           socket.emit("receive_message",savedMessage);
           const assignIsSend=await isSend({_id:savedMessage._id,senderId:savedMessage.senderId,receiverId:savedMessage.receiverId});
           socket.emit("isSend",{messageId:assignIsSend._id,senderId:assignIsSend.senderId,receiverId:assignIsSend.receiverId,isSend:assignIsSend.IsSend});
-          if(update_last_message){
-            socket.emit("chat_list_update",update_last_message);
+          const offlinePayload=buildChatListPayload({IsSend:true,isDelivered:false,isSeen:false});
+          if(offlinePayload){
+            socket.emit("chat_list_update",offlinePayload);
           }
         }
          await emitPendingCountToUser(data.receiverId, io, users);
@@ -144,7 +169,7 @@ io.on('connection',(socket)=>{
     });
 
 
-  
+
 
    //in data it contains userId
   socket.on("user_online",async(data:{userId:string})=>{
@@ -154,7 +179,7 @@ io.on('connection',(socket)=>{
         for(const message of messages){
             //make a box of it if it not exists
             if(!grouped[message.senderId]){
-                grouped[message.senderId]=[];   
+                grouped[message.senderId]=[];
             }
             grouped[message.senderId].push(message._id.toString());
         }
@@ -163,6 +188,8 @@ io.on('connection',(socket)=>{
             if(senderSocketId){
                 //all message of particular user will be send to it
                 io.to(senderSocketId).emit("isDelivered_mark",{messageIds:grouped[senderId],isDeliverd:true});
+                // chat list ke ticks bhi delivered ho jaye
+                io.to(senderSocketId).emit("chat_list_delivered",{senderId,receiverId:data.userId});
             }
         }
     }catch(err){
@@ -179,6 +206,8 @@ io.on('connection',(socket)=>{
     const receiverSocketId=users[data.receiverId];
     if(receiverSocketId){
         io.to(receiverSocketId).emit("isSeenStatus",{messageId:message,isSeen:true})
+        // chat list ke ticks blue ho jaye (message data.receiverId ne bheje the, data.senderId ne dekh liye)
+        io.to(receiverSocketId).emit("chat_list_seen",{senderId:data.receiverId,receiverId:data.senderId});
     }
     const senderSocketId=users[data.senderId];
     if(senderSocketId){
@@ -219,7 +248,9 @@ io.on('connection',(socket)=>{
         await delete_from_everyone(data._id);
         const updateChatList=await update_chat_list({senderId:data.senderId,receiverId:data.receiverId});
         const receiverSocketId=users[data.receiverId];
-        if(receiverSocketId){
+        const isSelfChat=data.senderId===data.receiverId;
+        // self chat me dobara emit nahi karna
+        if(receiverSocketId && !isSelfChat){
             io.to(receiverSocketId).emit("deleted_everyone",{messageId:data._id,senderId:data.senderId,receiverId:data.receiverId})
             if(updateChatList){
                 io.to(receiverSocketId).emit("chat_list_update",updateChatList);
@@ -234,7 +265,7 @@ io.on('connection',(socket)=>{
         //pin part
                const message=await allPinnedMessage({senderId:data.senderId,receiverId:data.receiverId});
                 socket.emit("all_pinned",(message));
-                if(receiverSocketId){
+                if(receiverSocketId && !isSelfChat){
                     io.to(receiverSocketId).emit("all_pinned",(message));
                 }
     }catch(err){
@@ -243,13 +274,14 @@ io.on('connection',(socket)=>{
         }
     });
 
-    //update/edit 
+    //update/edit
     socket.on("edit_message",async(data:{_id:string,senderId:string,receiverId:string,msg:string})=>{
         try{
         const editData=await edit({_id:data._id,msg:data.msg});
         const edittedData=await update_chat_list_edit({_id:data._id,senderId:data.senderId,receiverId:data.receiverId,msg:data.msg});
         const receiverSocketId=users[data.receiverId];
-        if(receiverSocketId){
+        const isSelfChat=data.senderId===data.receiverId;
+        if(receiverSocketId && !isSelfChat){
             io.to(receiverSocketId).emit("message_edited",{messageId:data._id,senderId:data.senderId,receiverId:data.receiverId,msg:editData.message,isEdited:editData.isEdited});
         if(edittedData){
             io.to(receiverSocketId).emit("chat_list_update",edittedData);
@@ -258,35 +290,32 @@ io.on('connection',(socket)=>{
         socket.emit("message_edited",{messageId:data._id,senderId:data.senderId,receiverId:data.receiverId,msg:editData.message,isEdited:editData.isEdited});
         if(edittedData){
             socket.emit("chat_list_update",edittedData);
-        }    
+        }
     }catch(err){
             socket.emit("error_msg",{msg:"fail it edit message"});
-        } 
+        }
     });
 
     //delete for me
     socket.on("delete_from_me",async(data:{_id:string,senderId:string,receiverId:string})=>{
         try{
           await delete_from_me({_id:data._id,senderId:data.senderId,receiverId:data.receiverId});
-            const currentUserSocketId=users[data.senderId];
-            if(currentUserSocketId){
-                io.to(currentUserSocketId).emit("delete",{messageId:data._id,senderId:data.senderId,receiverId:data.receiverId});
-            }
+            // same socket pe do baar emit hota tha, ab sirf ek baar
             socket.emit('delete',{messageId:data._id,senderId:data.senderId,receiverId:data.receiverId});
         }catch(err){
             socket.emit("error_msg",{msg:"error in deleting message"});
-        }   
+        }
     });
     //operations end
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
     //last_message_start
     socket.on("last_message",async(data:{userId:string})=>{
         try{
@@ -303,7 +332,7 @@ io.on('connection',(socket)=>{
      socket.on("unseen_message",async(data:{senderId:string})=>{
         const unseenMessage=await totalPendingMessage({userId:data.senderId});
         const senderId=users[data.senderId];
-        if(senderId){  
+        if(senderId){
             socket.emit("unseen_message_count",unseenMessage);
         }
      });
@@ -365,7 +394,7 @@ io.on('connection',(socket)=>{
                  delete activeCalls[otherUserId];
                  if(otherUserSocketId){
                     io.to(otherUserSocketId).emit("call_ended",({senderId:disconnectUserId,receiverId:otherUserId}))
-                 }    
+                 }
                 }
                 break;
             }

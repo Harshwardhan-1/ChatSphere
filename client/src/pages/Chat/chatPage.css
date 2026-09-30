@@ -1,74 +1,428 @@
 .chat {
-  height: 100vh;
-  width: 100%;
+  --chat-bar-bg: #f0f2f5;
+  --chat-input-bg: #ffffff;
+  --chat-system-bg: #ffffff;
+  --chat-system-text: #54656f;
+  --chat-notice-bg: #ffeecd;
+  --chat-notice-text: #54656f;
+  --chat-attach-bg: rgba(11, 20, 26, 0.06);
+  --chat-pop-bg: #ffffff;
+  --chat-r: 7.5px;
+  --tick-space: 20px;
+
+  position: relative;
   display: flex;
   flex-direction: column;
-  background: #efeae2;
+  height: 100%;
+  min-height: 0;
+  background: var(--chat-bar-bg);
   overflow: hidden;
 }
 
+[data-theme="dark"] .chat {
+  --chat-bar-bg: #202c33;
+  --chat-input-bg: #2a3942;
+  --chat-system-bg: #182229;
+  --chat-system-text: #8696a0;
+  --chat-notice-bg: #182229;
+  --chat-notice-text: #ffd279;
+  --chat-attach-bg: rgba(11, 20, 26, 0.28);
+  --chat-pop-bg: #233138;
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+
 .chatHeader {
-  height: 60px;
-  min-height: 60px;
-  background: #f0f2f5;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  border-left: 1px solid #d1d7db;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--chat-bar-bg);
+  border-bottom: 1px solid var(--wp-border);
+  z-index: 5;
 }
 
 .chatHeaderLeft {
   display: flex;
   align-items: center;
   gap: 14px;
-}
-.avat {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-}
-
-.userInfo {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.userInfo h4 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 500;
-  color: #111b21;
-}
-
-.userInfo p {
-  margin: 2px 0 0;
-  font-size: 13px;
-  color: #667781;
-}
-
-.chatHeaderRight {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  color: #54656f;
-  font-size: 22px;
+  flex: 1;
+  min-width: 0;
   cursor: pointer;
 }
 
-.chatBody {
-  flex: 1;
-  overflow-y: auto;
-  /* background-image: url('whatappback.jpg'); */
-  background-repeat: repeat;
-  padding: 14px 8%;
-  background-size: 412px auto;
+.avat {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.userInfo {
+  min-width: 0;
+  display: flex;
   flex-direction: column;
+  gap: 1px;
+}
+
+.userInfo h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--wp-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userInfo p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--wp-text-muted);
+}
+
+.chatHeaderCallBtns {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.callIconBtn {
+  padding: 9px;
+  border-radius: 50%;
+  color: var(--wp-text-muted);
+  cursor: pointer;
+  box-sizing: content-box;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.callIconBtn:hover {
+  background: var(--wp-primary-soft);
+  color: var(--wp-text);
+}
+
+.chatOptions {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.threeDotBtn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wp-text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.threeDotBtn:hover {
+  background: var(--wp-primary-soft);
+  color: var(--wp-text);
+}
+
+.optionsMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 220px;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--chat-pop-bg);
+  border-radius: 3px;
+  box-shadow: 0 2px 5px rgba(11, 20, 26, 0.26), 0 2px 10px rgba(11, 20, 26, 0.16);
+  animation: wp-pop-in 140ms ease both;
+  transform-origin: top right;
+}
+
+.optionsMenu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 24px;
+  border: none;
+  background: transparent;
+  color: var(--wp-text);
+  font: inherit;
+  font-size: 0.9375rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 100ms ease;
+}
+
+.optionsMenu button:hover {
+  background: var(--wp-bg);
+}
+
+[data-theme="dark"] .optionsMenu button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ==========================================================================
+   Call overlay
+   ========================================================================== */
+
+.callOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--wp-space-4, 16px);
+  background: rgba(11, 20, 26, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+.incomingCallBox,
+.callingBox,
+.ongoingCallBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px;
+  min-width: 260px;
+  background: var(--wp-surface);
+  color: var(--wp-text);
+  border-radius: var(--wp-radius-lg, 16px);
+  box-shadow: var(--wp-shadow-lg);
+  text-align: center;
+}
+
+.incomingCallBox p,
+.callingBox p {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.incomingCallActions {
+  display: flex;
+  gap: 16px;
+}
+
+.acceptBtn,
+.rejectBtn,
+.endCallBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+
+.acceptBtn {
+  background: var(--wp-primary);
+  color: #ffffff;
+}
+
+.rejectBtn,
+.endCallBtn {
+  background: #ea0038;
+  color: #ffffff;
+}
+
+.acceptBtn:hover,
+.rejectBtn:hover,
+.endCallBtn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.remoteVideo {
+  width: min(70vw, 480px);
+  aspect-ratio: 4 / 3;
+  border-radius: var(--wp-radius-md, 10px);
+  background: #000;
+  object-fit: cover;
+}
+
+.localVideoSmall {
+  width: 120px;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--wp-radius-sm, 6px);
+  border: 2px solid var(--wp-surface);
+  background: #000;
+  object-fit: cover;
+}
+
+.ongoingCallBox {
+  position: relative;
+  padding: 16px;
+}
+
+.ongoingCallBox .localVideoSmall {
+  position: absolute;
+  right: 16px;
+  bottom: 70px;
+  box-shadow: var(--wp-shadow-md);
+}
+
+/* ==========================================================================
+   Selection bar (forward mode)
+   ========================================================================== */
+
+.selectionBar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--chat-bar-bg);
+  color: var(--wp-text);
+  border-bottom: 1px solid var(--wp-border);
+  z-index: 4;
+}
+
+.selectionCancelBtn,
+.selectionForwardBtn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wp-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
+}
+
+.selectionCancelBtn:hover,
+.selectionForwardBtn:hover:not(:disabled) {
+  background: var(--wp-primary-soft);
+  color: var(--wp-primary);
+}
+
+.selectionCount {
+  flex: 1;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.selectionForwardBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Pinned message bar
+   ========================================================================== */
+
+.pinned-message-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--chat-bar-bg);
+  border-bottom: 1px solid var(--wp-border);
+  z-index: 3;
+}
+
+.pinned-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 10px;
+  border-left: 3px solid var(--wp-primary);
+  cursor: pointer;
+}
+
+.pin-symbol {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.pinned-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.pinned-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--wp-primary);
+}
+
+.pinned-preview {
+  font-size: 0.8125rem;
+  color: var(--wp-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pinned-navigation {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--wp-text-muted);
+}
+
+.pinned-navigation button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wp-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.pinned-navigation button:hover {
+  background: var(--wp-primary-soft);
+  color: var(--wp-text);
+}
+
+.chatBody {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: var(--wp-chat-bg);
+  background-image: url("/whatsappback.jpg");
+  background-repeat: repeat;
+  background-size: 480px 480px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(134, 150, 160, 0.4) transparent;
+}
+
+[data-theme="dark"] .chatBody {
+  background-image: url("/chat-bg-dark.png");
 }
 
 .chatBody::-webkit-scrollbar {
@@ -76,783 +430,1044 @@
 }
 
 .chatBody::-webkit-scrollbar-thumb {
-  background: #b6b6b6;
-  border-radius: 10px;
+  background: rgba(134, 150, 160, 0.4);
+  border-radius: 3px;
 }
 
+/* "end-to-end encrypted" notice — WhatsApp yellow chip */
 .encryptBox {
-  max-width: 520px;
-  margin: 8px auto 20px;
-  background: #fff3c4;
-  color: #54656f;
-  padding: 10px 14px;
-  border-radius: 8px;
+  max-width: 470px;
+  margin: 12px auto 10px;
+  padding: 6px 12px 7px;
+  background: var(--chat-notice-bg);
+  color: var(--chat-notice-text);
+  font-size: 0.78rem;
   text-align: center;
-  font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.45;
+  border-radius: var(--chat-r);
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
 }
 
-.chatFooter {
-  height: 62px;
-  min-height: 62px;
-  background: #f0f2f5;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 0 16px;
-}
-
-.footerIcon {
-  font-size: 24px;
-  color: #54656f;
-  cursor: pointer;
-}
-
-.chatFooter input {
-  flex: 1;
-  height: 42px;
-  border: none;
-  outline: none;
-  background: #fff;
-  border-radius: 8px;
-  padding: 0 16px;
-  font-size: 15px;
-}
-
-.message {
-  position: relative;
-  max-width: 60%;
-  padding: 4px 10px;
-  border-radius: 8px;
-  margin: 4px 0;
-  width: fit-content;
-}
-
-.chatFooter {
-  height: 62px;
-  min-height: 62px;
-  background: #f0f2f5;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 12px;
-}
-
-.chatFooter form {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.chatFooter input {
-  flex: 1;
-  height: 40px;
-  border: none;
-  outline: none;
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 0 14px;
-  font-size: 14px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.chatFooter button {
-  height: 40px;
-  padding: 0 16px;
-  border: none;
-  background: #00a884;
-  color: white;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.chatFooter button:hover {
-  background: #008f72;
-}
-
-.sender {
-  background-color: #d9fdd3;
-  margin-left: auto;
-  border-radius: 11px 0px 11px 11px;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.13);
-}
-
-.receiver {
-  background-color: #ffffff;
-  margin-right: auto;
-  border-radius: 0px 11px 11px 11px;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.13);
-}
 .chat-body {
   display: flex;
   flex-direction: column;
-  padding: 10px;
+  padding: 4px 6% 12px;
+}
+
+/* ==========================================================================
+   Date separator — TODAY / YESTERDAY / TUESDAY / 05/09/2026
+   ========================================================================== */
+
+.date-row {
+  align-self: center;
+  margin: 14px 0 10px;
+}
+
+.date-chip {
+  display: inline-block;
+  padding: 5px 12px 6px;
+  background: var(--chat-system-bg);
+  color: var(--chat-system-text);
+  font-size: 12.5px;
+  line-height: 20px;
+  text-transform: uppercase;
+  border-radius: var(--chat-r);
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  user-select: none;
+}
+
+/* ==========================================================================
+   Message bubbles
+   ========================================================================== */
+
+.message {
+  --bubble-bg: var(--wp-bubble-in);
+
+  position: relative;
+  display: flow-root; /* contains the floated time */
+  max-width: 65%;
+  align-self: flex-start;
+  margin: 4px 0 0;
+  padding: 7px 10px 7px 11px;
+  background: var(--bubble-bg);
+  color: var(--wp-text);
+  font-size: 14.2px;
+  line-height: 20px;
+  border-radius: 0 var(--chat-r) var(--chat-r) var(--chat-r);
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  word-break: break-word;
+}
+
+.message.sender {
+  --bubble-bg: var(--wp-bubble-out);
+
+  align-self: flex-end;
+  border-radius: var(--chat-r) 0 var(--chat-r) var(--chat-r);
+}
+
+/* bubble tail */
+.message::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 9px;
+  height: 13px;
+  background: var(--bubble-bg);
+}
+
+.message.receiver::before {
+  left: -8px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+.message.sender::before {
+  right: -8px;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+/* consecutive messages from same side: no tail, all corners round */
+.message.receiver:not(:has(> .system-message)) + .message.receiver,
+.message.sender:not(:has(> .system-message)) + .message.sender {
+  border-radius: var(--chat-r);
+}
+
+.message.receiver:not(:has(> .system-message)) + .message.receiver::before,
+.message.sender:not(:has(> .system-message)) + .message.sender::before {
+  display: none;
+}
+
+/* bigger gap when the side changes */
+.message.sender + .message.receiver,
+.message.receiver + .message.sender {
+  margin-top: 14px;
+}
+
+/* room for the reaction pill that overlaps the bottom edge */
+.message:has(.reaction-badge) {
+  margin-bottom: 16px;
+}
+
+/* text — inline so the time can sit on the last line like WhatsApp */
+.message-text {
+  display: inline;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-text a {
+  color: #027eb5;
+  text-decoration: none;
+}
+
+.message-text a:hover {
+  text-decoration: underline;
+}
+
+[data-theme="dark"] .message-text a {
+  color: #53bdeb;
+}
+
+/* time + ticks */
+.message-time {
+  float: right;
+  margin: 4px 0 0 16px;
+  height: 16px;
+  line-height: 16px;
+  font-size: 11px;
+  color: var(--wp-text-muted);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.message.sender .message-time {
+  margin-right: var(--tick-space);
+}
+
+.message-status {
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 700;
+  letter-spacing: -0.35em;
+  padding-right: 0.35em;
+  color: var(--wp-text-muted);
+  user-select: none;
+}
+
+.message-status span {
+  color: inherit;
+}
+
+/* "seen" tick has inline style="color: blue" — swap it for WhatsApp blue */
+.message-status span[style] {
+  color: var(--wp-tick-read) !important;
+}
+
+/* selection mode */
+.message.selectable {
+  cursor: pointer;
+  padding-left: 36px;
+}
+
+.message.selectedMsg {
+  box-shadow: 0 0 0 2px var(--wp-primary) inset;
+}
+
+.messageSelectCheckbox {
+  position: absolute;
+  left: 10px;
+  top: 9px;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--wp-primary);
+  cursor: pointer;
+}
+
+.pin-icon-on-message {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  font-size: 0.65rem;
+  background: var(--chat-pop-bg);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(11, 20, 26, 0.25);
+}
+
+.message.receiver .pin-icon-on-message {
+  right: auto;
+  left: -6px;
+}
+
+/* jump-to-message flash (pinned bar click) — full row tint that fades out */
+.message.highlighted::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: -100vw;
+  right: -100vw;
+  background: rgba(0, 168, 132, 0.28);
+  pointer-events: none;
+  animation: wp-highlight 2.2s ease-out forwards;
+}
+
+@keyframes wp-highlight {
+  0%,
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   System messages — plain centered chip, no bubble, no green
+   ========================================================================== */
+
+.message.message:has(> .system-message) {
+  align-self: center;
+  max-width: 90%;
+  margin: 10px 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  cursor: default;
+}
+
+.message.message:has(> .system-message)::before,
+.message.message:has(> .system-message) > .message-time,
+.message.message:has(> .system-message) > .message-status,
+.message.message:has(> .system-message) > .pin-icon-on-message {
+  display: none;
+}
+
+.system-message {
+  display: block;
+  margin: 0 auto;
+  padding: 5px 12px 6px;
+  background: var(--chat-system-bg);
+  color: var(--chat-system-text);
+  font-size: 12.5px;
+  line-height: 20px;
+  text-align: center;
+  border-radius: var(--chat-r);
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+}
+
+/* ==========================================================================
+   Reactions (logic untouched — only the look)
+   ========================================================================== */
+
+/* trigger: round button beside the bubble on hover */
+.reaction-btn {
+  position: absolute;
+  top: 6px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--chat-pop-bg);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 1px 2px rgba(11, 20, 26, 0.25);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.message.receiver .reaction-btn {
+  left: calc(100% + 6px);
+}
+
+.message.sender .reaction-btn {
+  right: calc(100% + 6px);
+}
+
+/* invisible bridge over the 6px gap, so the pointer never "leaves" the message
+   on its way to the button (that was making the button vanish before the click) */
+.reaction-btn::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 14px;
+}
+
+.message.receiver .reaction-btn::before {
+  right: 100%;
+}
+
+.message.sender .reaction-btn::before {
+  left: 100%;
+}
+
+.message:hover .reaction-btn,
+.reaction-btn:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.reaction-btn:hover {
+  transform: scale(1.1);
+}
+
+/* full emoji picker: fixed + centered so it can never be clipped by the scroll area */
+.emoji-picker-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  border-radius: var(--wp-radius-md, 10px);
+  overflow: hidden;
+  box-shadow: var(--wp-shadow-lg);
+}
+
+/* pill that overlaps the bottom edge of the bubble */
+.reaction-badge {
+  position: absolute;
+  bottom: -13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+  padding: 0 6px;
+  background: var(--chat-pop-bg);
+  border: 1px solid var(--wp-border);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  line-height: 1;
+  box-shadow: 0 1px 1.5px rgba(11, 20, 26, 0.18);
+  cursor: pointer;
+  z-index: 2;
+}
+
+.message.receiver .reaction-badge {
+  left: 8px;
+}
+
+.message.sender .reaction-badge {
+  right: 8px;
+}
+
+.reaction-count {
+  margin-left: 2px;
+  font-size: 0.6875rem;
+  color: var(--wp-text-muted);
+}
+
+/* detail sheet: fixed + centered with a dimmed backdrop (box-shadow trick) */
+.reaction-detail-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 900;
+  width: 280px;
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  background: var(--chat-pop-bg);
+  color: var(--wp-text);
+  border-radius: var(--wp-radius-lg, 16px);
+  box-shadow: 0 0 0 100vmax rgba(11, 20, 26, 0.4), var(--wp-shadow-lg);
+  animation: wp-pop-center 140ms ease both;
+}
+
+@keyframes wp-pop-center {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.reaction-detail-header {
+  margin-bottom: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--wp-text-muted);
+}
+
+.reaction-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.add-reaction-pill,
+.reaction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 999px;
+  background: var(--wp-bg);
+  color: var(--wp-text);
+  font-size: 0.8125rem;
+  cursor: default;
+}
+
+[data-theme="dark"] .add-reaction-pill,
+[data-theme="dark"] .reaction-pill {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.add-reaction-pill {
+  cursor: pointer;
+  color: var(--wp-text-muted);
+}
+
+.add-reaction-pill:hover {
+  background: var(--wp-primary-soft);
+}
+
+.reaction-divider {
+  height: 1px;
+  margin: 4px 0 8px;
+  background: var(--wp-border);
+}
+
+.reaction-user-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
 }
 
-.menu-container {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-}
-
-.menu-btn {
-  display: none;
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 18px;
-  color: #555;
-}
-
-.message:hover .menu-btn {
-  display: block;
-}
-
-.menu-btn:hover {
-  color: #000;
-}
-
-/* ===========================
-   Dropdown
-=========================== */
-
-.menu-dropdown {
-  position: absolute;
-  top: 28px;
-  right: 0;
-  width: 180px;
-  background: #fff;
+.reaction-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
   border-radius: 8px;
+  cursor: default;
+}
+
+.reaction-user-row:hover {
+  background: var(--wp-bg);
+}
+
+[data-theme="dark"] .reaction-user-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.reaction-avatar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.reaction-user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.reaction-user-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
+  text-overflow: ellipsis;
 }
 
-.menu-item {
-  padding: 12px 15px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.2s;
+.reaction-remove-hint {
+  font-size: 0.6875rem;
+  color: var(--wp-text-muted);
 }
 
-.menu-item:hover {
-  background: #f5f5f5;
+.reaction-emoji-large {
+  flex-shrink: 0;
+  font-size: 1.1rem;
 }
 
-.menu-item:not(:last-child) {
-  border-bottom: 1px solid #eee;
-}
+/* ==========================================================================
+   Edit box
+   ========================================================================== */
 
 .editBox {
-  margin-top: 6px;
-  background: #f3f4f6;
-  padding: 6px;
-  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+  padding: 2px 0;
 }
 
 .editInput {
-  width: 100%;
-  padding: 6px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: var(--chat-input-bg);
+  color: var(--wp-text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.editInput:focus {
   outline: none;
+  box-shadow: 0 0 0 2px var(--wp-primary-soft);
 }
 
 .editActions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 5px;
 }
 
 .editActions button {
-  font-size: 12px;
-  padding: 4px 10px;
+  padding: 5px 14px;
+  border: none;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.editActions button:first-child {
+  background: transparent;
+  color: var(--wp-text-muted);
+}
+
+.editActions button:last-child {
+  background: var(--wp-primary);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Image / video / file / docs bubbles
+   Neutral (non-green) frame, 3px padding, like WhatsApp media messages.
+   ========================================================================== */
+
+.message.message:has(.imageMessage, .videoMessage, .documentMessage, .docs-message-card) {
+  --bubble-bg: var(--wp-bubble-in);
+
+  padding: 3px 3px 4px;
+}
+
+.message.message.selectable:has(.imageMessage, .videoMessage, .documentMessage, .docs-message-card) {
+  padding-left: 36px;
+}
+
+.message:has(.imageMessage, .videoMessage, .documentMessage, .docs-message-card) .message-time {
+  margin: 4px 6px 0 8px;
+}
+
+.message.sender:has(.imageMessage, .videoMessage, .documentMessage, .docs-message-card) .message-time {
+  margin-right: calc(6px + var(--tick-space));
+}
+
+.message:has(.imageMessage, .videoMessage, .documentMessage, .docs-message-card) .message-status {
+  right: 9px;
+  bottom: 4px;
+}
+
+.fileMessage {
+  display: flex;
+  flex-direction: column;
+}
+
+.imageMessage,
+.videoMessage {
+  position: relative;
+  line-height: 0;
+  overflow: hidden;
   border-radius: 6px;
 }
 
-.message-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-
-.seen {
-  color: #34b7f1;
-}
-
-.delivered,
-.sent {
-  color: gray;
-}
-
-.message-time {
-  font-size: 11px;
-  color: gray;
-  text-align: right;
-  margin-top: 4px;
-}
-
-.typing-indicator {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 20px;
-  margin-left: 10px;
-}
-
-.typing-indicator span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #9e9e9e;
-  animation: typingBounce 1.2s infinite ease-in-out;
-}
-
-.typing-indicator span:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.typing-indicator span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.typing-indicator span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-/* ---- File / Image / Video Messages ---- */
-
-.fileMessage {
-  margin-top: 6px;
-  max-width: 280px;
-}
-
-.imageMessage {
-  width: 250px;
-  border-radius: 12px;
-  overflow: hidden;
+.imageMessage img,
+.videoMessage video {
+  display: block;
+  width: auto;
+  height: auto;
+  min-width: 200px;
+  max-width: min(330px, 70vw);
+  max-height: 400px;
+  object-fit: cover;
+  background: var(--chat-attach-bg);
 }
 
 .imageMessage img {
-  width: 250px;
-  height: 250px;
-  object-fit: cover;
-  display: block;
   cursor: pointer;
 }
 
-/* VIDEO */
-.videoMessage {
-  width: 250px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #000;
-}
-
-.videoMessage video {
-  width: 250px;
-  height: 250px;
-  display: block;
-  object-fit: contain;
-  background: #000;
-}
-
-/* PDF / OTHER DOCUMENT */
-.documentMessage {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  background: #f0f2f5;
-  border-radius: 10px;
-  max-width: 260px;
-}
-
-.documentMessage .fileIcon {
-  font-size: 28px;
-  flex-shrink: 0;
-}
-
-.documentMessage .fileDetails {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  flex: 1;
-}
-
-.documentMessage .fileDetails span:first-child {
-  font-weight: 500;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.documentMessage .fileDetails span:last-child {
-  font-size: 11px;
-  color: #667;
-}
-
-.documentMessage a {
-  font-size: 12px;
-  font-weight: 600;
-  color: #2563eb;
-  text-decoration: none;
-  flex-shrink: 0;
-}
-.documentMessage a:hover {
-  text-decoration: underline;
-}
-
-.chatHeader {
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.chatOptions {
-  margin-left: auto;
-  position: relative;
-}
-
-.threeDotBtn {
-  border: none;
-  background: transparent;
-  font-size: 28px;
-  cursor: pointer;
-  padding: 5px 10px;
-}
-
-.optionsMenu {
+/* image: time + ticks sit on the picture, white over a soft bottom gradient */
+.imageMessage::after {
+  content: "";
   position: absolute;
+  left: 0;
   right: 0;
-  top: 40px;
-  width: 210px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  padding: 8px 0;
-  z-index: 1000;
+  bottom: 0;
+  height: 44px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.45), transparent);
+  pointer-events: none;
 }
 
-.optionsMenu button {
-  width: 100%;
-  border: none;
-  background: white;
-  text-align: left;
-  padding: 12px 16px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.optionsMenu button:hover {
-  background: #f2f2f2;
-}
-
-.system-message {
-  background: #f0f0f0;
-  color: #667781;
-  font-size: 13px;
-  padding: 6px 12px;
-  border-radius: 7px;
-  text-align: center;
-  width: fit-content;
-  max-width: 80%;
-  margin: 6px auto;
-}
-
-/* MOBILE */
-@media (max-width: 600px) {
-  .fileMessage {
-    max-width: 260px;
-  }
-
-  .imageMessage img,
-  .videoMessage video {
-    max-width: 260px;
-    max-height: 300px;
-  }
-
-  .documentMessage {
-    min-width: 210px;
-    max-width: 260px;
-  }
-}
-
-.pinned-message-bar {
-  height: 52px;
-  min-height: 52px;
-  background: #f0f2f5;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  cursor: pointer;
-  border-bottom: 1px solid #d1d7db;
-  box-sizing: border-box;
-}
-
-.pinned-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.pin-symbol {
-  font-size: 18px;
-  color: #54656f;
-}
-
-.pinned-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  line-height: 1.2;
-}
-
-.pinned-title {
-  font-size: 13px;
-  font-weight: 500;
-  color: #00a884;
-}
-
-.pinned-preview {
-  font-size: 13px;
-  color: #667781;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 500px;
-}
-
-.pinned-arrow {
-  font-size: 22px;
-  color: #54656f;
-  margin-left: 10px;
-}
-
-.reaction-btn {
-  display: none;
-}
-
-.message:hover .reaction-btn {
-  display: block;
-}
-
-.message {
-  position: relative;
-}
-
-.reaction-badge {
+.message:has(.imageMessage) > .message-time {
   position: absolute;
-  bottom: -10px;
-  right: 8px;
-  background: #fff;
-  border-radius: 12px;
-  padding: 2px 6px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  font-size: 13px;
-  cursor: pointer;
+  float: none;
+  right: 10px;
+  bottom: 8px;
+  margin: 0;
+  color: #ffffff;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.35);
+  z-index: 2;
 }
 
-.reaction-count {
-  font-size: 11px;
-  color: #667781;
-  margin-left: 2px;
+.message.sender:has(.imageMessage) > .message-time {
+  right: calc(10px + var(--tick-space));
 }
 
-.reaction-detail-popup {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
-  width: 300px;
-  padding: 12px 0;
-  z-index: 1000;
+.message:has(.imageMessage) > .message-status {
+  right: 10px;
+  bottom: 8px;
+  color: #ffffff;
+  z-index: 2;
 }
 
-.reaction-detail-header {
-  padding: 0 16px 12px;
-  font-weight: 600;
-  font-size: 15px;
-  color: #111b21;
-}
-
-.reaction-pills-row {
-  display: flex;
-  gap: 8px;
-  padding: 0 16px 12px;
-  overflow-x: auto;
-}
-
-.add-reaction-pill {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid #e9edef;
-  background: #fff;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.reaction-pill {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: #d9fdd3;
-  border-radius: 16px;
-  padding: 4px 10px;
-  font-size: 14px;
-}
-
-.reaction-divider {
-  height: 1px;
-  background: #e9edef;
-  margin: 0 0 4px;
-}
-
-.reaction-user-list {
-  max-height: 240px;
-  overflow-y: auto;
-}
-
-.reaction-user-row {
+/* file / docs card (pdf, doc, xls, zip ...) */
+.documentMessage,
+.docs-message-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 16px;
+  padding: 10px 12px 10px 10px;
+  min-width: 270px;
+  background: var(--chat-attach-bg);
+  border-radius: 6px;
+}
+
+.docs-message-card {
   cursor: pointer;
 }
 
-.reaction-user-row:hover {
-  background: #f5f6f6;
-}
-
-.reaction-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 600;
+.fileIconBox {
   flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 46px;
+  padding-top: 8px;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  border-radius: 4px;
+  clip-path: polygon(0 0, 68% 0, 100% 22%, 100% 100%, 0 100%);
 }
 
-.reaction-user-info {
+.fileDetails {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
-.reaction-user-name {
-  font-size: 14px;
-  color: #111b21;
+.fileName {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  color: var(--wp-text);
+  word-break: break-all;
 }
 
-.reaction-remove-hint {
-  font-size: 12px;
-  color: #667781;
+.fileMeta {
+  font-size: 0.75rem;
+  color: var(--wp-text-muted);
 }
 
-.reaction-emoji-large {
-  font-size: 20px;
+.docs-message-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  color: var(--wp-text);
+  word-break: break-word;
 }
 
-@keyframes typingBounce {
+.docs-message-sub {
+  font-size: 0.75rem;
+  color: var(--wp-text-muted);
+}
+
+.fileOpenBtn {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(11, 20, 26, 0.08);
+  color: var(--wp-text-muted);
+  text-decoration: none;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.fileOpenBtn:hover {
+  background: var(--wp-primary);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .fileOpenBtn {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================================================
+   Per-message ⋮ menu — small area at the top-right of the bubble
+   ========================================================================== */
+
+.menu-container {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  z-index: 6;
+}
+
+.menu-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 0 var(--chat-r) 0 12px;
+  background: linear-gradient(to left, var(--bubble-bg) 60%, transparent);
+  color: var(--wp-text-muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.message:hover .menu-btn {
+  opacity: 1;
+}
+
+.message:has(.imageMessage) .menu-btn {
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 25;
+  min-width: 180px;
+  padding: 8px 0;
+  background: var(--chat-pop-bg);
+  color: var(--wp-text);
+  border-radius: 3px;
+  box-shadow: 0 2px 5px rgba(11, 20, 26, 0.26), 0 2px 10px rgba(11, 20, 26, 0.16);
+  animation: wp-pop-in 120ms ease both;
+  transform-origin: top right;
+}
+
+/* incoming bubbles sit on the left — open the menu rightwards so it never clips */
+.message.receiver .menu-dropdown {
+  right: auto;
+  left: 0;
+  transform-origin: top left;
+}
+
+.menu-item {
+  padding: 9px 24px;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 100ms ease;
+}
+
+.menu-item:hover {
+  background: var(--wp-bg);
+}
+
+[data-theme="dark"] .menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ==========================================================================
+   Typing indicator
+   ========================================================================== */
+
+.typing-indicator {
+  align-self: flex-start;
+  display: inline-flex;
+  gap: 4px;
+  width: fit-content;
+  margin: 8px 6% 10px;
+  padding: 11px 14px;
+  background: var(--wp-bubble-in);
+  border-radius: 0 var(--chat-r) var(--chat-r) var(--chat-r);
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+}
+
+.typing-indicator span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wp-text-muted);
+  animation: wp-typing-bounce 1s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes wp-typing-bounce {
   0%,
-  80%,
+  60%,
   100% {
     transform: translateY(0);
-    opacity: 0.4;
+    opacity: 0.5;
   }
-
-  40% {
-    transform: translateY(-6px);
+  30% {
+    transform: translateY(-4px);
     opacity: 1;
   }
 }
 
-.chatHeaderCallBtns {
-  display: flex;
-  gap: 18px;
-  align-items: center;
-  margin-left: auto;
-  margin-right: 12px;
+@keyframes wp-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
-.callIconBtn {
-  cursor: pointer;
-  color: #54656f;
-  transition: color 0.2s ease;
-}
+/* ==========================================================================
+   Footer / composer
+   ========================================================================== */
 
-.callIconBtn:hover {
-  color: #00a884;
-}
-
-.callOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.incomingCallBox {
-  background: #202c33;
-  color: white;
-  padding: 32px 40px;
-  border-radius: 12px;
-  text-align: center;
-  min-width: 280px;
-}
-
-.incomingCallBox p {
-  font-size: 18px;
-  margin-bottom: 20px;
-}
-
-.incomingCallActions {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-}
-
-.acceptBtn {
-  background: #00a884;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.acceptBtn:hover {
-  background: #029274;
-}
-
-.rejectBtn {
-  background: #e64980;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.rejectBtn:hover {
-  background: #d1336b;
-}
-
-.callingBox {
-  background: #202c33;
-  color: white;
-  padding: 32px 40px;
-  border-radius: 12px;
-  text-align: center;
-}
-
-.callingBox p {
-  font-size: 18px;
-  margin-bottom: 16px;
-}
-
-.ongoingCallBox {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.remoteVideo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background: #111;
-}
-
-.localVideoSmall {
-  position: absolute;
-  bottom: 24px;
-  right: 24px;
-  width: 160px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 10px;
-  border: 2px solid white;
-  background: #000;
-}
-
-.endCallBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: #e64980;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 500;
-  margin-top: 20px;
-}
-
-.endCallBtn:hover {
-  background: #d1336b;
-}
-
-.ongoingCallBox .endCallBtn {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 0;
-}
-
-.docs-message-card {
+.chatFooter {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 220px;
-  padding: 10px 12px;
+  padding: 10px 16px;
+  background: var(--chat-bar-bg);
+  border-top: 1px solid var(--wp-border);
+  z-index: 5;
+}
+
+.footerIcon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  color: var(--wp-text-muted);
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.footerIcon:hover {
+  color: var(--wp-text);
+}
+
+.chatFooter form:first-of-type {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.chatFooter form:first-of-type input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 14px;
+  border: none;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--chat-input-bg);
+  color: var(--wp-text);
+  font: inherit;
+  font-size: 0.9375rem;
+}
+
+.chatFooter form:first-of-type input[type="text"]::placeholder {
+  color: var(--wp-text-muted);
+}
+
+.chatFooter form:first-of-type input[type="text"]:focus {
+  outline: none;
+}
+
+.chatFooter button[type="submit"] {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--wp-primary);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.chatFooter button[type="submit"]:hover {
+  background: var(--wp-primary-hover, var(--wp-primary));
+}
+
+.chatFooter button[type="submit"]:active {
+  transform: scale(0.97);
+}
+
+.chatFooter form:last-of-type {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.chatFooter form:last-of-type input[type="file"] {
+  max-width: 140px;
+  font-size: 0.75rem;
+  color: var(--wp-text-muted);
+}
+
+.chatFooter form:last-of-type input[type="file"]::file-selector-button {
+  padding: 6px 10px;
+  margin-right: 8px;
+  border: none;
+  border-radius: 999px;
+  background: var(--chat-input-bg);
+  color: var(--wp-text);
+  font: inherit;
+  font-size: 0.75rem;
   cursor: pointer;
 }
-.docs-message-card:hover {
-  background: rgba(0, 0, 0, 0.09);
+
+.chatFooter form:last-of-type button[type="submit"] {
+  padding: 0 14px;
+  min-height: 34px;
+  background: transparent;
+  color: var(--wp-primary);
+  border: 1px solid var(--wp-primary);
 }
-.docs-message-icon {
-  font-size: 26px;
+
+.chatFooter form:last-of-type button[type="submit"]:hover {
+  background: var(--wp-primary-soft);
 }
-.docs-message-title {
-  font-weight: 600;
-  word-break: break-word;
+
+/* ==========================================================================
+   Reduced motion + small screens
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .optionsMenu,
+  .menu-dropdown,
+  .reaction-detail-popup,
+  .message.highlighted::after,
+  .typing-indicator span {
+    animation: none;
+  }
 }
-.docs-message-sub {
-  font-size: 12px;
-  opacity: 0.7;
+
+@media (max-width: 640px) {
+  .chat-body {
+    padding-inline: 3%;
+  }
+
+  .message {
+    max-width: 82%;
+  }
+
+  .remoteVideo {
+    width: min(85vw, 360px);
+  }
 }
