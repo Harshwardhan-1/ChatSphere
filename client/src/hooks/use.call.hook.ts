@@ -89,7 +89,7 @@ export function useCallHook(senderId: string) {
         otherUserIdRef.current = receiverId;
 
         const stream = await startLocalMedia(callType);
-        if (!stream) return;
+        if (!stream) return;           
 
         const pc = createPeerConnection(stream);
 
