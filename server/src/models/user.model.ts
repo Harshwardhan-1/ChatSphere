@@ -8,6 +8,7 @@ export interface IUser extends Document{
     password?:string,
     role:string,
     googleId?:string,
+    description?:string,
     avatar?:string,
     createdAt:Date,
     updatedAt:Date,
@@ -55,6 +56,10 @@ const userSchema=new mongoose.Schema<IUser>({
     role:{
         type:String,
         default:"user",
+    },
+    description:{
+        type:String,
+        default:"Life is Short Keep Enjoying",
     },
     avatar:{
         type:String,

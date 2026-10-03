@@ -1105,3 +1105,19 @@ const handleRemoveReaction = (messageId: string, currentEmoji: string) => {
 };
 
 export default ChatPage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//chat list ma pin message ha toh wo nahi dikhana ha chatlist ma tick

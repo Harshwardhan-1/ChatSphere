@@ -8,6 +8,7 @@ import { notification } from "../models/mute.notification.model";
 import { durationtoMs } from "../helper/durationtoMs";
 import { User } from "../models/user.model";
 import { Socket,Server } from "socket.io";
+import { allUserChannel } from "./channels.management.controller";
 
 
 
@@ -351,27 +352,161 @@ export const allPinnedMessage=async(data:{senderId:string,receiverId:string})=>{
 
 
 
-//the msg is basically the path
-export const changeProfileImage=async(data:
-    {senderId:string,msg:string},
+
+
+
+
+
+
+
+
+
+
+
+//the msg is basically the user info path one to one chat message
+
+export const profileImage=async(data:{senderId:string,avatar:string},
     socket:Socket,io:Server,users:{[key:string]:string}
 )=>{
     try{
-        const user=await User.findById(data.senderId);
+        const [user,allUser]=await Promise.all([
+             User.findById(data.senderId),
+             User.find() 
+        ]);
         if(!user){
             throw new Error("user not found");
         }
-        user.avatar=data.msg;
+        user.avatar=data.avatar;
         await user.save();
-        const allUser=await User.find();
-
         for(let i=0;i<allUser.length;i++){
-            const id=allUser[i].toString();
+            const id=allUser[i]._id.toString();
+            if(id==data.senderId.toString())continue;
             const receiverSocketId=users[id];
             if(receiverSocketId){
-                io.to(receiverSocketId).emit("profile_pic_changed",({senderId:data.senderId,receiverId:id}))
+                io.to(receiverSocketId).emit("profile_pic_changed",({data,receiverId:id}));
             }
         }
+        // for understanding it in better way
+        socket.emit("profile_pic_changed",({data,receiverId:data.senderId}));
+    }catch(err){
+        throw err;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const description=async(data:{senderId:string,description:string},
+    socket:Socket,io:Server,users:{[key:string]:string},activeChats:Record<string,string>
+)=>{
+    try{
+        const d=await User.findById(data.senderId);
+        const user=await User.find();
+        if(!d){
+            throw new Error("user not found");
+        }
+        d.description=data.description;
+        await d.save();
+        for(let i=0;i<user.length;i++){
+            const id=user[i].toString();
+            if(id===data.senderId.toString())continue;
+            const receiverSocketId=users[id];
+            if(receiverSocketId && activeChats[id]===data.senderId){
+                io.to(receiverSocketId).emit("profile_description_changed",(data));
+            }
+        }
+        socket.emit("profile_description_changed",(data));
+    }catch(err){
+        throw err;
+    }
+}
+
+
+
+
+
+
+
+
+//one to one chat data
+
+
+export const allPersonalMedia=async(data:{senderId:string,receiverId:string},socket:Socket)=>{
+    try{
+        const m=await personalChat.find({
+            $or:[
+                {senderId:data.senderId,receiverId:data.receiverId},
+                {senderId:data.receiverId,receiverId:data.senderId},
+            ],
+            mimetype:{$regex:"^(image|video)",$options:"i"},
+        }).sort({createdAt:1});
+
+        socket.emit("all_personal_chat_media",({data,m}));
+    }catch(err){
+        throw err;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const allPersonalDocs=async(data:{senderId:string,receiverId:string},socket:Socket)=>{
+    try{
+        const d=await personalChat.find({
+            $or:[
+                {senderId:data.senderId,receiverId:data.receiverId},
+                {senderId:data.receiverId,receiverId:data.senderId},
+            ],
+            mimetype:{$regex:"^(application)",$options:"i"},
+        }).sort({createdAt:1});
+        socket.emit("all_personal_chat_docs",({data,d}));
+    }catch(err){
+        throw err;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+export const allPersonalLinks=async(data:{senderId:string,receiverId:string},socket:Socket)=>{
+    try{
+        const l=await personalChat.find({
+            $or:[
+                {senderId:data.senderId,receiverId:data.receiverId},
+                {senderId:data.receiverId,receiverId:data.senderId}
+            ],
+            messageType:"text",
+            message:{ $regex: "((https?:\\/\\/)?(www\\.)?[a-zA-Z0-9-]+\\.[a-zA-Z]{2,}(\\/[^\\s]*)?)", $options: "i" },
+        }).sort({createdAt:1});
+        socket.emit("all_personal_links",({data,l}));
     }catch(err){
         throw err;
     }
