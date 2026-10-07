@@ -63,3 +63,7 @@ export default app;
 
 //4 on frontend
 // 4.1  npm install @react-oauth/google
+
+
+
+// meaning of --cached in git command is remove it from github not from my device
