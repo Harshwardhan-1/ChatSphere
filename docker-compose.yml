@@ -24,4 +24,4 @@ services:
     volumes:
       - ./client:/app
       - /app/node_modules
-    restart: unless-stopped
+    restart: unless-stopped.

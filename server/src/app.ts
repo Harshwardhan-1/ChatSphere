@@ -66,4 +66,5 @@ export default app;
 
 
 
-// meaning of --cached in git command is remove it from github not from my device
+// meaning of --cached in git command is remove it from github not from my device git rm -r --cached node_modulus
+//chore is for maintainance
