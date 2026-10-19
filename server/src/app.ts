@@ -6,11 +6,30 @@ import { FRONTEND_URL } from './configs/env.config';
 import { ErrorMiddleware } from './middleware/error.middleware';
 
 
+//security features added 
+import mongoSanitize from 'express-mongo-sanitize';
+import helmet from 'helmet';
+
+
+
+
 
 
 
 
 const app=express();
+
+//it add additional security features when send response to client 
+//for ex when some other tries to show your website in short form on their website it restricts them
+app.use(helmet({
+    crossOriginResourcePolicy:false,
+}));
+
+
+//helps to manage nosql query reduce risk
+app.use(mongoSanitize());
+
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
@@ -18,6 +37,9 @@ app.use(cors({
      methods:["GET","POST","PUT","DELETE"],
      credentials:true,
 }));
+
+
+
 
 import { authRouter } from './routes/auth.routes';
 import { chatpageRoutes } from './routes/chat.routes';

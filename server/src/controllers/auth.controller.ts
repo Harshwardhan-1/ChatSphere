@@ -26,7 +26,7 @@ const generateToken=(userId:string,email:string)=>{
 export const signup=async(req:Request,res:Response,next:NextFunction):Promise<void>=>{
     try{
         const {name,userName,email,password}=req.body;
-        if(!name || !email || !password){
+        if(!name ||  !userName || !email || !password){
             res.status(400).json({
                 success:false,
                 message:"All Fields are Required",
