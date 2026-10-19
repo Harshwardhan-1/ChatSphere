@@ -49,10 +49,11 @@ export const signup=async(req:Request,res:Response,next:NextFunction):Promise<vo
             password:hashPassword,
         });
         if(!user){
-            res.status(400).json({
+           res.status(400).json({
                 success:false,
                 message:"Error creating User",
             });
+            return;
         }
         const token=generateToken(user._id.toString(),email);
         res.cookie("token",token,{
@@ -83,7 +84,7 @@ export const signin=async(req:Request,res:Response,next:NextFunction):Promise<vo
         if(!email || !password){
             res.status(400).json({
                 success:false,
-                message:"All Fields are Required",
+                message:"provide proper details",
             });
         }
         const user=await User.findOne({email:email.toLowerCase()});

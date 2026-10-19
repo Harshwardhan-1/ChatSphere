@@ -4,7 +4,7 @@ import { signupschema,signinschema } from '../validators/auth.validator';
 import { validate } from '../middleware/validation.middleware';
 import { signup,signin,logout,googleLogin,me } from '../controllers/auth.controller';
 import { isUserLoggedIn } from '../middleware/auth.middleware';
-import { registerRateLimiter,loginRateLimiter } from '../middleware/ratelimit.middleware';
+import { registerRateLimiter,loginRateLimiter } from '../middleware/rateLimit.middleware';
 
 
 authRouter.post("/register",registerRateLimiter,validate(signupschema),signup);

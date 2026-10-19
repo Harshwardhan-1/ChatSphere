@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { NextFunction } from 'express';
 import { Request,Response } from 'express';
 import cookieParser from "cookie-parser";
 import cors from 'cors';
@@ -7,7 +7,6 @@ import { ErrorMiddleware } from './middleware/error.middleware';
 
 
 //security features added 
-import mongoSanitize from 'express-mongo-sanitize';
 import helmet from 'helmet';
 
 
@@ -19,15 +18,7 @@ import helmet from 'helmet';
 
 const app=express();
 
-//it add additional security features when send response to client 
-//for ex when some other tries to show your website in short form on their website it restricts them
-app.use(helmet({
-    crossOriginResourcePolicy:false,
-}));
 
-
-//helps to manage nosql query reduce risk
-app.use(mongoSanitize());
 
 
 app.use(express.json());
@@ -36,6 +27,13 @@ app.use(cors({
     origin:FRONTEND_URL,
      methods:["GET","POST","PUT","DELETE"],
      credentials:true,
+}));
+
+
+//it add additional security features when send response to client 
+//for ex when some other tries to show your website in short form on their website it restricts them
+app.use(helmet({
+    crossOriginResourcePolicy:false,
 }));
 
 
