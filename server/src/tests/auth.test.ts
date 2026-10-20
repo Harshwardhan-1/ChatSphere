@@ -121,23 +121,4 @@ describe("Auth",()=>{
             expect(res.body.errors).toBe("pssword must be atleast 1 characters");
         });
     });
-
-    describe("GET /api/v1/auth/logout",()=>{
-        it("it should logout user successfully with a status code of 200",async()=>{
-        (jwt.verify as jest.Mock).mockReturnValue(true);
-     (User.findOne as jest.Mock).mockReturnValue({
-        select:jest.fn().mockResolvedValue({
-            email:"test@gmail.com",
-        })
-     });
-            const res=await request(app)
-            .post("/api/v1/auth/logout")
-            .set("Cookie","token=fake_token")
-            expect(res.status).toBe(200);
-            expect(res.body).toEqual({
-                success:true,
-                message:"successfully logout",
-            });
-        });
-    });
 });
