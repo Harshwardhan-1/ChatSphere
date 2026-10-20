@@ -1,29 +1,30 @@
 import {Request,Response,NextFunction} from 'express';
 import { User } from '../models/user.model';
 import bcrypt from 'bcrypt';
-import { JWT_SECRET,JWT_EXPIRES_IN,GOOGLE_CLIENT_ID } from '../configs/env.config';
-import jwt,{Secret,SignOptions} from 'jsonwebtoken';
+import { JWT_SECRET,JWT_EXPIRES_IN,GOOGLE_CLIENT_ID} from '../configs/env.config';
 import { authRequest } from '../types/auth.Requests.types';
 import { OAuth2Client,TokenPayload } from 'google-auth-library';
+import jwt from 'jsonwebtoken';
 
-//it tells the type of it
-const secret:Secret=JWT_SECRET!;
-const options:SignOptions={
-    //we use square because to identify the type we use [] squares bracket
-    expiresIn:JWT_EXPIRES_IN! as SignOptions['expiresIn']
-}
 
+const JWT_REFRESH_SECRET=process.env.JWT_REFRESH_SECRET || JWT_SECRET;
 const googleClient=new OAuth2Client(GOOGLE_CLIENT_ID);
 
-const generateToken=(userId:string,email:string)=>{
-    return jwt.sign(
-        {id:userId,email:email},
-        secret,
-        options,
-    )
+const generateToken=(id:string,email:string)=>{
+    const accessToken=jwt.sign(
+        {id,email},
+         JWT_SECRET as string,
+        {expiresIn:'15m'} //it is short lived
+    );
+    const refreshToken=jwt.sign(
+        {id,email},
+        JWT_REFRESH_SECRET as string,
+        {expiresIn:'7d'}  //it is long lived
+    );
+    return {accessToken,refreshToken};
 }
 
-export const signup=async(req:Request,res:Response,next:NextFunction):Promise<void>=>{
+export const register=async(req:Request,res:Response,next:NextFunction):Promise<void>=>{
     try{
         const {name,userName,email,password}=req.body;
         if(!name ||  !userName || !email || !password){
@@ -55,16 +56,20 @@ export const signup=async(req:Request,res:Response,next:NextFunction):Promise<vo
             });
             return;
         }
-        const token=generateToken(user._id.toString(),email);
-        res.cookie("token",token,{
+        const {accessToken,refreshToken}=generateToken(user._id.toString(),email);
+        res.cookie("refreshToken",refreshToken,{
+            //helps that browser don't read cookie
             httpOnly:true,
-            secure:true,
-            sameSite:'lax',
+            //if(true)send cookie to https else stop it works on localhost
+            secure:process.env.NODE_ENV=== 'production',
+            //diffrent websites can access if none like frontend on vecel and backend on render
+            sameSite:process.env.NODE_ENV=== "production"? 'none':'lax',
+            maxAge:7*24*60*60*1000
         });
         res.status(201).json({
             success:true,
             message:"successfully register",
-            token,
+            accessToken,
         })
     }catch(err){
         console.log(err);
@@ -72,13 +77,7 @@ export const signup=async(req:Request,res:Response,next:NextFunction):Promise<vo
     }
 }
 
-
-
-
-
-
-
-export const signin=async(req:Request,res:Response,next:NextFunction):Promise<void>=>{
+export const login=async(req:Request,res:Response,next:NextFunction):Promise<void>=>{
     try{
         const {email,password}=req.body;
         if(!email || !password){
@@ -86,6 +85,7 @@ export const signin=async(req:Request,res:Response,next:NextFunction):Promise<vo
                 success:false,
                 message:"provide proper details",
             });
+            return;
         }
         const user=await User.findOne({email:email.toLowerCase()});
         if(!user){
@@ -110,16 +110,17 @@ export const signin=async(req:Request,res:Response,next:NextFunction):Promise<vo
             });
             return;
         }
-        let token=generateToken(user._id.toString(),email);
-        res.cookie("token",token,{
+        let {accessToken,refreshToken}=generateToken(user._id.toString(),email);
+        res.cookie("refreshToken",refreshToken,{
             httpOnly:true,
-            secure:true,
-            sameSite:"lax",
+            secure:process.env.NODE_ENV=== 'production',
+            sameSite:process.env.NODE_ENV=== "production"? 'none':'lax',
+            maxAge:7*24*60*60*1000,
         });
         res.status(200).json({
             success:true,
             message:"successfully verified",
-            token,
+            accessToken,
         });
     }catch(err){
         next(err);
@@ -127,38 +128,21 @@ export const signin=async(req:Request,res:Response,next:NextFunction):Promise<vo
 }
 
 
-
-
-
-
-
-
-export const logout=async(req:Request,res:Response,next:NextFunction):Promise<void>=>{
-try{
-    const token=req.cookies?.token;
-    res.clearCookie("token",{
-        httpOnly:true,
-        secure:true,
-        sameSite:"none",
-        partitioned:true,
-    });
-    res.status(200).json({
-        success:true,
-        message:"successfully logout",
-    });
-}catch(err){
-    next(err);
+export const logout=async(req:authRequest,res:Response,next:NextFunction)=>{
+    try{
+        res.clearCookie("refreshToken",{
+            httpOnly:true,
+            secure:process.env.NODE_ENV=== 'production',
+            sameSite:process.env.NODE_ENV=== 'production'?'none':'lax',
+        });
+        return res.status(200).json({
+            success:true,
+            message:"successfully logout",
+        });
+    }catch(err){
+        next(err);
+    }
 }
-}
-
-
-
-
-
-
-
-
-
 
 export const googleLogin=async(req:authRequest,res:Response,next:NextFunction)=>{
     try{
@@ -210,35 +194,69 @@ export const googleLogin=async(req:authRequest,res:Response,next:NextFunction)=>
             }
             await user.save();
         }
-        const token=jwt.sign({id:user?._id.toString(),email:email},JWT_SECRET as string,options);
-        res.cookie("token",token,{
+        const {refreshToken,accessToken}=generateToken(user._id.toString(),email);
+        res.cookie("refreshToken",refreshToken,{
             httpOnly:true,
-            sameSite:"lax",
-            secure:true,
+            secure:process.env.NODE_ENV=== 'production',
+            sameSite:process.env.NODE_ENV=== "production"? 'none':'lax',
             maxAge:7*24*60*60*1000,
         });
         return res.status(200).json({
             success:true,
             message:"successfully verified",
-            token,
+            accessToken,
         });
     }catch(err){
         next(err);
     }
 }
 
+export const me=async(req:authRequest,res:Response,next:NextFunction)=>{
+    try{
+        return res.status(200).json({
+            success:true,
+            message:"successfully verified",
+            user:req.user,
+        });
+    }catch(err){
+        next(err);
+    }
+}
 
+export const refreshTokenHandler=async(req:authRequest,res:Response,next:NextFunction)=>{
+    try{
+        const token=req.cookies?.refreshToken;
+        if(!token){
+            return res.status(401).json({
+                success:false,
+                message:"Refresh Token is missing",
+            });
+        }
+        jwt.verify(token,JWT_REFRESH_SECRET as string,async(err:any,decoded:any)=>{
+            if(err){
+                return res.status(403).json({
+                    success:false,
+                    message:"Invalid refresh token",
+                });
+            }
+            const user=await User.findOne({email:decoded.email});
+            if(!user){
+                return res.status(403).json({
+                    success:false,
+                    message:"user not exist",
+                });
+            }
+            const accessToken=jwt.sign({id:user._id.toString(),email:user.email},JWT_SECRET as string, {expiresIn:"15m"});
+            return res.status(200).json({
+                success:true,
+                accessToken,
+            })
+        });
 
-
-
-
-
-
-
-
-
-
-
+    }catch(err){
+        next(err);
+    }
+}
 
 export const allUsers=async(req:authRequest,res:Response,next:NextFunction)=>{
     try{
@@ -263,37 +281,6 @@ export const allUsers=async(req:authRequest,res:Response,next:NextFunction)=>{
                 loginUserId:id,
                 email:email,
             },
-        });
-    }catch(err){
-        next(err);
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-export const me=async(req:authRequest,res:Response,next:NextFunction)=>{
-    try{
-        const token=req.cookies?.token;
-        if(!token){
-            return res.status(401).json({
-               success:false,
-               message:"token not found",
-            });
-        }
-        return res.status(200).json({
-            success:true,
-            message:"successfully verified",
         });
     }catch(err){
         next(err);

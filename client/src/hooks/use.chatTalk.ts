@@ -1,6 +1,6 @@
 import { useState,useEffect } from "react";
 import { socket } from "../utils/socket";
-import { prevMsg } from "../services/chat.service";
+import { chatService } from "../services/chat.service";
 import { showApiError } from "../utils/showApiError";
 import { userPresence } from "../services/user.presence.service";
 import { notificationSound } from "../notification/notification.sound";
@@ -189,7 +189,7 @@ const handleUpdatePinMessage=(message:Message)=>{
         //calling old message
         const loadMessage=async()=>{
             if(!senderId || !receiverId)return;
-            const data=await prevMsg(senderId,receiverId);
+            const data=await chatService.prevMsg(senderId,receiverId);
             if(data){
                 setAllMessages(data);
             }

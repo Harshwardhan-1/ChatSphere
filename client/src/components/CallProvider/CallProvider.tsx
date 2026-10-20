@@ -1,5 +1,4 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import axios from "axios";
 import { useCallHook } from "../../hooks/use.call.hook";
 import { env } from "../../configs/env.config";
 import { socket } from "../../utils/socket";
@@ -12,6 +11,7 @@ import {
   type CallType,
 } from "../Call/CallContext";
 import { CallScreen } from "../Call/CallScreen";
+import axiosInstance from "../../services/axiosInstance";
 
 interface Props {
   userId: string;
@@ -63,8 +63,7 @@ function CallProviderInner({ userId, children }: Props) {
   const peerKnown = !peerInfo || users.some((u) => u._id === peerInfo.id);
   useEffect(() => {
     if (!userId || (users.length > 0 && peerKnown)) return;
-    axios
-      .get(`${env.backendUrl}/api/v1/chat/alluser`, { withCredentials: true })
+    axiosInstance.get("/chat/alluser")
       .then((res) => {
         if (res.data.success) setUsers(res.data.data.allUser);
       })

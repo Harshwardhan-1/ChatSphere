@@ -1,8 +1,6 @@
 import { useEffect,useState } from "react";
 import { showApiError } from "../utils/showApiError";
-import { env } from "../configs/env.config";
-import axios from "axios";
-
+import axiosInstance from "../services/axiosInstance";
 
 interface data{
     _id:string,
@@ -21,10 +19,10 @@ export function ShowAllUser(){
     try{
     useEffect(()=>{
         const fetch=async()=>{
-            const response=await axios.get(`${env.backendUrl}/api/v1/chat/alluser`,{withCredentials:true});
-            if(response.data.success===true && response.data.message=== 'all users'){
-                setData(response.data.data.allUser);
-                setUserData(response.data.userData);
+            const res=await axiosInstance.get("/chat/alluser");
+            if(res.data.success && res.data.message=== "all users"){
+                setData(res.data.data.allUser);
+                setUserData(res.data.userData);
             }
         }
   fetch();

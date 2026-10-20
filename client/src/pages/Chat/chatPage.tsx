@@ -8,7 +8,6 @@ import {socket} from "../../utils/socket";
 import type { Message } from "../../hooks/use.chatTalk";
 import "./chatPage.css";
 import "./chatPage.whatsapp.css";
-import axios from 'axios';
 import {env} from '../../configs/env.config';
 import { chatPageOption } from "../../actions/chatpage.action";
 import { DisappearingMessage } from "../../components/disapperingMessage/disappearing.message";
@@ -27,7 +26,7 @@ import { FooterEmoji } from "../../components/FooterEmoji/FooterEmoji";
 import { ForwardModal } from "../../components/ForwardMessage/ForwardModel"; 
 import { useCall } from "../../components/Call/CallContext";
 import { Trash2,Clock,VolumeX,Image,FileText,Link2,Pencil,Forward,Copy,Pin as PinIcon,PinOff,EyeOff } from "lucide-react";
-
+import axiosInstance from "../../services/axiosInstance";
 
 interface User {
     _id: string;
@@ -261,8 +260,8 @@ const ChatPage = ({ data, data2 }: Props) => {
       if(!data2.loginUserId) return;
       const fetchUsers = async () => {
           try {
-              const res = await axios.get(`${env.backendUrl}/api/v1/chat/alluser`, { withCredentials: true });
-              if (res.data.success) {
+              const res = await axiosInstance.get("chat/alluser");
+            if (res.data.success) {
                   const otherUsers = res.data.data.allUser.filter(
                       (u: any) => u._id !== data2.loginUserId
                   );
@@ -359,7 +358,7 @@ const ChatPage = ({ data, data2 }: Props) => {
     try{
       const formData=new FormData();
       formData.append("file",file);
-      const response=await axios.post(`${env.backendUrl}/api/v1/upload`,formData,{withCredentials:true});
+      const response=await axiosInstance.post("/upload",formData);
       if(response.data.success){
         const fileData=response.data.data;
          userfileData({

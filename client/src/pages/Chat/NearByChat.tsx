@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "../../services/axiosInstance";
 import EmojiPicker from "emoji-picker-react";
 import { socket } from "../../utils/socket";
 import { env } from "../../configs/env.config";
@@ -78,10 +78,56 @@ export function NearByChat() {
             setLocationError("Geolocation not supported in this browser");
             return;
         }
-        navigator.geolocation.getCurrentPosition(
-            (pos) => setCoords([pos.coords.longitude, pos.coords.latitude]),
-            () => setLocationError("Location access denied, cannot show nearby communities")
-        );
+        let retried = false;
+        const options: PositionOptions = { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 };
+
+        const onSuccess = (pos: GeolocationPosition) => {
+            const c: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+            setLocationError("");
+            setCoords(c);
+            // last working location save kar lo, fallback me kaam aayega
+            localStorage.setItem("lastCoords", JSON.stringify(c));
+        };
+
+        const useFallback = async () => {
+            // 1) pichli saved location
+            try {
+                const saved = localStorage.getItem("lastCoords");
+                if (saved) {
+                    setLocationError("");
+                    setCoords(JSON.parse(saved));
+                    return;
+                }
+            } catch { /* ignore */ }
+
+            // 2) IP se approximate location
+            try {
+                const r = await fetch("https://ipwho.is/");
+                const j = await r.json();
+                if (j.success && typeof j.latitude === "number" && typeof j.longitude === "number") {
+                    setLocationError("");
+                    setCoords([j.longitude, j.latitude]);
+                    return;
+                }
+            } catch { /* ignore */ }
+
+            setLocationError("Could not get your location, check internet and refresh");
+        };
+
+        const onError = (err: GeolocationPositionError) => {
+            if (err.code === err.PERMISSION_DENIED) {
+                setLocationError("Location permission denied, allow it in browser settings");
+                return;
+            }
+            if (!retried) {
+                retried = true;
+                setTimeout(() => navigator.geolocation.getCurrentPosition(onSuccess, onError, options), 2000);
+                return;
+            }
+            useFallback();
+        };
+
+        navigator.geolocation.getCurrentPosition(onSuccess, onError, options);
     }, []);
 
     // ---------- lists ----------
@@ -416,7 +462,7 @@ export function NearByChat() {
 
         const formData = new FormData();
         formData.append("file", f);
-        const res = await axios.post(`${env.backendUrl}/api/v1/upload`, formData, { withCredentials: true });
+        const res = await axiosInstance.post("/upload", formData);
         if (res.data.success) {
             socket.emit("edit_community_image", {
                 communityId: selectedCommunity._id,
@@ -452,7 +498,7 @@ export function NearByChat() {
         }
         const formData = new FormData();
         formData.append("file", file);
-        const res = await axios.post(`${env.backendUrl}/api/v1/upload`, formData, { withCredentials: true });
+        const res = await axiosInstance.post("/upload", formData);
         if (res.data.success) {
             const data = res.data.data;
             socket.emit("community_msg_creation", {
@@ -518,7 +564,7 @@ export function NearByChat() {
             if (newImageFile) {
                 const formData = new FormData();
                 formData.append("file", newImageFile);
-                const res = await axios.post(`${env.backendUrl}/api/v1/upload`, formData, { withCredentials: true });
+                const res = await axiosInstance.post("/upload", formData);
                 if (res.data.success) {
                     imagePath = res.data.data.path;
                 }

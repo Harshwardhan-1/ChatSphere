@@ -165,7 +165,7 @@ const HomePage = () => {
 
     const checkSession = async () => {
       try {
-        const response = await axios.get(`${env.backendUrl}/api/v1/auth/me`, {
+        const response = await axios.get("/auth/me", {
           withCredentials: true,
           timeout: 8000,
         });

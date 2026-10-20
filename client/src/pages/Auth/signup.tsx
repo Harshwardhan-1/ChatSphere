@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
-import { env } from "../../configs/env.config";
 import { showApiError } from "../../utils/showApiError";
 import ThemeToggle from "../../components/ThemeToggle/ThemeToggle";
+import { authService } from "../../services/auth.service";
 import "./Auth.css";
+import axiosInstance from "../../services/axiosInstance";
 
 
 const MIN_LENGTH = 8;
@@ -154,12 +154,8 @@ const RegisterPage = () => {
     try {
       setLoading(true);
       const send = { name, userName, email, password };
-      const response = await axios.post(
-        `${env.backendUrl}/api/v1/auth/register`,
-        send,
-        { withCredentials: true }
-      );
-      if (response.data.message === "successfully register") {
+      const res =await authService.registerUser(send);
+      if (res.success) {
         navigate("/login");
       }
     } catch (err) {
@@ -328,13 +324,9 @@ const RegisterPage = () => {
             <GoogleLogin
               onSuccess={async (res) => {
                 try {
-                  const response = await axios.post(
-                    `${env.backendUrl}/api/v1/auth/google`,
-                    { credential: res.credential },
-                    { withCredentials: true }
-                  );
+                  const response=await axiosInstance.post("/auth/google",{credential:res.credential});
                   if (response.data.success) {
-                    localStorage.setItem("token", response.data.token);
+                    localStorage.setItem("accessToken", response.data.accessToken);
                     navigate("/chat");
                   }
                 } catch (err) {

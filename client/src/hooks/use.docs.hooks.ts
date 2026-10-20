@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import * as Y from "yjs";
-import axios from "axios";
 import { socket } from "../utils/socket";
-import { env } from "../configs/env.config";
 import { showApiError } from "../utils/showApiError";
+import axiosInstance from "../services/axiosInstance";
 
 export const REMOTE_ORIGIN = "remote";
 export const LOCAL_ORIGIN = "local";
@@ -108,7 +107,7 @@ export function DocsHook(senderId: string) {
         if (!senderId) return;
         const fetchUsers = async () => {
             try {
-                const res = await axios.get(`${env.backendUrl}/api/v1/chat/alluser`, { withCredentials: true });
+                const res=await axiosInstance.get("/chat/alluser");
                 if (res.data.success) {
                 setUsers(res.data.data.allUser.filter((u: DocsUser) => String(u._id) !== String(senderId)));
                 }

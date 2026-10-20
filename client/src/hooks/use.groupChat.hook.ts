@@ -1,10 +1,9 @@
 import {useState, useEffect } from "react";
-import axios from 'axios';
-import { env } from "../configs/env.config";
 import { showApiError } from "../utils/showApiError";
 import {socket} from '../utils/socket';
 import { useRef } from "react";
 import { notificationSound } from "../notification/notification.sound";
+import axiosInstance from "../services/axiosInstance";
 
 export interface ChatUser {
     _id: string;
@@ -125,8 +124,8 @@ const handleEmojiOperation = (msg: any) => {
     useEffect(()=>{
         try{
             const fetch=async()=>{
-               const res=await axios.get(`${env.backendUrl}/api/v1/chat/alluser`,{withCredentials:true});
-               if(res.data.success){
+                const res=await axiosInstance.get("/chat/alluser");
+                if(res.data.success){
                 const allUsers = res.data.data.allUser;
                 const otherUsers = allUsers.filter(
                 (user: ChatUser) => user._id !== senderId

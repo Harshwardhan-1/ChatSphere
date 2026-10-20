@@ -1,6 +1,6 @@
 import app from "./app";
 import { PORT } from "./configs/env.config";
-import { connectDb } from "./Database/connectDB";
+import { connectDb } from "./configs/db";
 import http from "http";
 import { userChat } from "./Socket/socket";
 import { FRONTEND_URL } from "./configs/env.config";

@@ -5,10 +5,19 @@ import { JWT_SECRET } from '../configs/env.config';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.model';
 
+const extractToken=(req:authRequest):string | null=>{
+     const authHeader=req.headers?.authorization;
+     if(authHeader && authHeader.startsWith("Bearer ")){
+        //authHeader.substring(7) means remoce first seven of it
+        return authHeader.substring(7);
+     }
+     return null;
+}
+
 
 export const isUserLoggedIn=async(req:authRequest,res:Response,next:NextFunction)=>{
     try{
-        const token=req.cookies?.token;
+        const token=extractToken(req);
         if(!token){
             return res.status(401).json({
                 success:false,
@@ -38,7 +47,7 @@ export const isUserLoggedIn=async(req:authRequest,res:Response,next:NextFunction
 
 export const isAdminLoggedIn=async(req:authRequest,res:Response,next:NextFunction)=>{
     try{
-        const token=req.cookies?.token;
+        const token=extractToken(req);
         if(!token){
             return res.status(401).json({
                 success:false,

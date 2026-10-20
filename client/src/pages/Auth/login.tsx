@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
-import { env } from "../../configs/env.config";
 import { showApiError } from "../../utils/showApiError";
 import ThemeToggle from "../../components/ThemeToggle/ThemeToggle";
+import { authService } from "../../services/auth.service";
+import axiosInstance from "../../services/axiosInstance";
 import "./Auth.css";
 
 const EyeIcon = ({ off }: { off: boolean }) =>
@@ -45,14 +45,11 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const send = { email, password };
-      const response = await axios.post(
-        `${env.backendUrl}/api/v1/auth/login`,
-        send,
-        { withCredentials: true }
-      );
-      if (response.data.message === "successfully verified") {
-        localStorage.setItem("token", response.data.token);
+      const data={email,password};
+      const res=await authService.loginUser(data);
+      if(res.success){
+        //here we can store in localstorage if we want
+        localStorage.setItem("accessToken",res.accessToken);
         navigate("/chat");
       }
     } catch (err) {
@@ -143,13 +140,9 @@ const Login = () => {
             <GoogleLogin
               onSuccess={async (res) => {
                 try {
-                  const response = await axios.post(
-                    `${env.backendUrl}/api/v1/auth/google`,
-                    { credential: res.credential },
-                    { withCredentials: true }
-                  );
+                  const response=await axiosInstance.post("/auth/google",{credential:res.credential});
                   if (response.data.success) {
-                    localStorage.setItem("token", response.data.token);
+                    localStorage.setItem("accessToken", response.data.accessToken);
                     navigate("/chat");
                   }
                 } catch (err) {

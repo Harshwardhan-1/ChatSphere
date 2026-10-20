@@ -7,8 +7,8 @@ import { ChannelHook } from "../../hooks/use.channel.hook";
 import { userChatListPresence } from "../../services/user.presence.service";
 import { ChannelProfile } from "../../components/ChannelsProfile/ChannelsProfile";
 import EmojiPicker from "emoji-picker-react";
-import axios from 'axios';
 import { renderMessageWithLinks } from "../../utils/linkify/linkify";
+import axiosInstance from "../../services/axiosInstance";
 import "./ChannelChat.css";
 
 
@@ -28,21 +28,21 @@ function resolveChannelPic(profilePic?: string) {
     return profilePic ? `${env.backendUrl}${profilePic}` : "/default.webp";
 }
 
-function getFollowerCount(ch: ChannelListItem): number {
-    return typeof ch.followersCount === "number" ? ch.followersCount : (ch.followers?.length ?? 0);
-}
+// function getFollowerCount(ch: ChannelListItem): number {
+//     return typeof ch.followersCount === "number" ? ch.followersCount : (ch.followers?.length ?? 0);
+// }
 
-function formatFollowers(count: number): string {
-    if (count >= 1_000_000) {
-        const v = count / 1_000_000;
-        return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)}M followers`;
-    }
-    if (count >= 1_000) {
-        const v = count / 1_000;
-        return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)}k followers`;
-    }
-    return `${count} follower${count === 1 ? "" : "s"}`;
-}
+// function formatFollowers(count: number): string {
+//     if (count >= 1_000_000) {
+//         const v = count / 1_000_000;
+//         return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)}M followers`;
+//     }
+//     if (count >= 1_000) {
+//         const v = count / 1_000;
+//         return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)}k followers`;
+//     }
+//     return `${count} follower${count === 1 ? "" : "s"}`;
+// }
 
 // reaction counts ko WhatsApp jaisa short format dene ke liye (23.2K, 1.8K, etc.)
 function formatReactionCount(count: number): string {
@@ -510,9 +510,8 @@ const handleFileSubmit=async(e:React.FormEvent<HTMLFormElement>)=>{
         return;
     }
     const formData=new FormData();
-    formData.append("file",file);
-    
-    const res=await axios.post(`${env.backendUrl}/api/v1/upload`,formData,{withCredentials:true});
+    formData.append("file",file);    
+    const res=await axiosInstance.post("/upload",formData);
     if(res.data.success){
         const data=res.data.data;
         sendFileMsg({channelId:selectedChannel!._id,senderId,message:data.path,messageType:"file",mimetype:data.mimetype,

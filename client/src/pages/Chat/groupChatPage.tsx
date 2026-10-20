@@ -27,6 +27,7 @@ import { Phone,Video } from "lucide-react";
 import { GroupCall } from "../../components/GroupCall/GroupCall";
 import {groupCall as useGroupCallHook} from "../../hooks/use.group.call.hook";
 import { CallChatPanel } from "../../components/CallChatPanel/CallChatPanel";
+import axiosInstance from "../../services/axiosInstance";
 
 const senderColors = ["#e542a3", "#f5793a", "#00a884", "#7c5cff", "#00afaf", "#e64980", "#f76707", "#1c7ed6"];
 
@@ -405,7 +406,7 @@ export function GroupChat() {
         const formData=new FormData();
         formData.append("file",file);
 
-        const res=await axios.post(`${env.backendUrl}/api/v1/upload`,formData,{withCredentials:true});
+        const res=await axiosInstance.post("/upload",formData);
         if(res.data.success){
             const data=res.data.data;
             groupFile({_id:selectedGroup._id,senderId,message:data.path,messageType:"file",
@@ -615,45 +616,8 @@ export function GroupChat() {
                 ) : ( 
 
                  <div className="chat-screen"> 
-          <div className="chatOptions">
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                      <div className="chatHeaderCallBtns">
+                 <div className="chatOptions">     
+                 <div className="chatHeaderCallBtns">
                  <Phone size={20} className="callIconBtn" onClick={handleGroupVoiceCall}  />
                  <Video size={20} className="callIconBtn" onClick={handleGroupVideoCall} />
                           </div>

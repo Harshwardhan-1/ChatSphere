@@ -14,5 +14,6 @@ export const{
     LIVEKIT_API_SECRET,
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
-    GROQ_API_KEY
+    GROQ_API_KEY,
+    JWT_REFRESH_SECRET
 }=process.env     
