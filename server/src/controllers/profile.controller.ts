@@ -8,7 +8,6 @@ import { notification } from "../models/mute.notification.model";
 import { durationtoMs } from "../helper/durationtoMs";
 import { User } from "../models/user.model";
 import { Socket,Server } from "socket.io";
-import { allUserChannel } from "./channels.management.controller";
 
 
 
