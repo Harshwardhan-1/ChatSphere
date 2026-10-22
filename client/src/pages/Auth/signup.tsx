@@ -27,6 +27,7 @@ const getStrength = (password: string) => {
   return { score: Math.max(score, 1), passed };
 };
 
+type UsernameStatus = "idle" | "checking" | "available" | "unavailable" | "invalid";
 
 
 const EyeIcon = ({ off }: { off: boolean }) =>
@@ -114,6 +115,10 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [formError, setFormError] = useState("");
 
+  // Username availability state
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>("idle");
+  const [usernameMessage, setUsernameMessage] = useState("");
+
   // Google button ko card ki width ke hisaab se fit karne ke liye
   const googleRef = useRef<HTMLDivElement>(null);
   const [googleWidth, setGoogleWidth] = useState(300);
@@ -129,6 +134,62 @@ const RegisterPage = () => {
     return () => ro.disconnect();
   }, []);
 
+  // Username check: pehle frontend validation, phir 400ms debounce ke baad API call
+  useEffect(() => {
+    const trimmed = userName.trim();
+
+    if (!trimmed) {
+      setUsernameStatus("idle");
+      setUsernameMessage("");
+      return;
+    }
+    if (trimmed.length < 3) {
+      setUsernameStatus("invalid");
+      setUsernameMessage("Username must be at least 3 characters");
+      return;
+    }
+    if (trimmed.length > 20) {
+      setUsernameStatus("invalid");
+      setUsernameMessage("Username must not exceed 20 characters");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) {
+      setUsernameStatus("invalid");
+      setUsernameMessage("Letters, numbers, and underscores only");
+      return;
+    }
+
+    setUsernameStatus("checking");
+    setUsernameMessage("Checking availability...");
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await axiosInstance.get(
+          `/auth/username-availability/${encodeURIComponent(trimmed)}`
+        );
+        if (cancelled) return;
+        setUsernameStatus("available");
+        setUsernameMessage(res.data.message || "Username is available");
+      } catch (err) {
+        if (cancelled) return;
+        const error = err as { response?: { status?: number; data?: { message?: string } } };
+        if (error.response?.status === 400) {
+          setUsernameStatus("unavailable");
+          setUsernameMessage(error.response.data?.message || "Username is already taken");
+        } else {
+          setUsernameStatus("idle");
+          setUsernameMessage("");
+        }
+      }
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [userName]);
+
   const { score, passed } = getStrength(password);
   const level = LEVELS[score];
   const showMatch = confirmPassword.length > 0;
@@ -138,6 +199,14 @@ const RegisterPage = () => {
     e.preventDefault();
     setFormError("");
 
+    if (usernameStatus === "checking") {
+      setFormError("Please wait while we check username availability.");
+      return;
+    }
+    if (usernameStatus === "unavailable" || usernameStatus === "invalid") {
+      setFormError(usernameMessage || "Please choose a valid available username.");
+      return;
+    }
     if (password.length < MIN_LENGTH) {
       setFormError(`Password must be at least ${MIN_LENGTH} characters.`);
       return;
@@ -154,9 +223,14 @@ const RegisterPage = () => {
     try {
       setLoading(true);
       const send = { name, userName, email, password };
-      const res =await authService.registerUser(send);
+      const res = await authService.registerUser(send);
       if (res.success) {
-        navigate("/login");
+        // register token save nahi karta, isliye usi email/password se login karke token lete hain
+        const loginRes = await authService.loginUser({ email, password });
+        if (loginRes.success) {
+          localStorage.setItem("accessToken", loginRes.accessToken);
+          navigate("/chat");
+        }
       }
     } catch (err) {
       showApiError(err);
@@ -176,7 +250,7 @@ const RegisterPage = () => {
       </header>
 
       <main className="wp-auth__main wp-container">
-        <div className="wp-auth__card">
+        <div className="wp-auth__card wp-auth__card--register">
           <h1 className="wp-auth__title">Create your account</h1>
           <p className="wp-auth__subtitle">
             Enter your details to start chatting.
@@ -203,15 +277,69 @@ const RegisterPage = () => {
                 <label className="wp-label" htmlFor="reg-username">
                   Username
                 </label>
-                <input
-                  id="reg-username"
-                  className="wp-input"
-                  type="text"
-                  placeholder="Choose a username"
-                  autoComplete="username"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                />
+                <div style={{ position: "relative" }}>
+                  <style>{`@keyframes wp-input-spin { to { transform: rotate(360deg); } }`}</style>
+                  <input
+                    id="reg-username"
+                    className="wp-input"
+                    type="text"
+                    placeholder="Choose a username"
+                    autoComplete="username"
+                    value={userName}
+                    style={{
+                      paddingRight: 38,
+                      ...(usernameStatus === "available"
+                        ? { borderColor: "#16a34a" }
+                        : usernameStatus === "unavailable" || usernameStatus === "invalid"
+                          ? { borderColor: "#dc2626" }
+                          : {}),
+                    }}
+                    aria-invalid={
+                      usernameStatus === "unavailable" || usernameStatus === "invalid"
+                        ? true
+                        : undefined
+                    }
+                    onChange={(e) => setUserName(e.target.value)}
+                  />
+                  {usernameStatus === "checking" && (
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        position: "absolute",
+                        right: 12,
+                        top: "50%",
+                        width: 16,
+                        height: 16,
+                        marginTop: -8,
+                        border: "2px solid rgba(128,128,128,0.35)",
+                        borderTopColor: "#00a884",
+                        borderRadius: "50%",
+                        animation: "wp-input-spin 0.7s linear infinite",
+                      }}
+                    />
+                  )}
+                </div>
+                {usernameMessage && (
+                  <p
+                    className={`wp-match ${
+                      usernameStatus === "available"
+                        ? "wp-match--ok"
+                        : usernameStatus === "checking"
+                          ? ""
+                          : "wp-match--bad"
+                    }`}
+                    style={
+                      usernameStatus === "available"
+                        ? { color: "#16a34a" }
+                        : usernameStatus === "unavailable" || usernameStatus === "invalid"
+                          ? { color: "#dc2626" }
+                          : undefined
+                    }
+                    role="status"
+                  >
+                    {usernameMessage}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -303,7 +431,12 @@ const RegisterPage = () => {
             <button
               className="wp-btn wp-btn--primary wp-btn--block"
               type="submit"
-              disabled={loading}
+              disabled={
+                loading ||
+                usernameStatus === "checking" ||
+                usernameStatus === "unavailable" ||
+                usernameStatus === "invalid"
+              }
             >
               {loading ? (
                 <>

@@ -336,6 +336,36 @@
 }
 
 
+.wp-input-wrap {
+  position: relative;
+}
+.wp-input-wrap .wp-input {
+  padding-right: 38px;
+}
+.wp-input-spinner {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  border: 2px solid rgba(128, 128, 128, 0.35);
+  border-top-color: #00a884;
+  border-radius: 50%;
+  animation: wp-input-spin 0.7s linear infinite;
+}
+@keyframes wp-input-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.wp-input.wp-input--ok {
+  border-color: #16a34a;
+}
+.wp-input.wp-input--bad {
+  border-color: #dc2626;
+}
+
 @media (max-width: 520px) {
   .wp-auth__card {
     padding: var(--wp-space-5);

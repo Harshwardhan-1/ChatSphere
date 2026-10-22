@@ -258,6 +258,38 @@ export const refreshTokenHandler=async(req:authRequest,res:Response,next:NextFun
     }
 }
 
+
+
+
+export const userNameAvailability=async(req:authRequest,res:Response,next:NextFunction)=>{
+    try{
+        const {userName}=req.params;
+        if(!userName){
+            return;
+        }
+        if(userName.length<3){
+            return res.status(400).json({
+                success:false,
+                message:"userName must be atleast of 3 characters",
+            });
+        }
+        const availability=await User.findOne({userName});
+        if(availability){
+            return res.status(400).json({
+                success:false,
+                message:"userName is already take"
+            });
+        }else{
+            return res.status(200).json({
+                success:true,
+                message:"userName is available",
+            });
+        }
+    }catch(err){
+        next(err);
+    }
+}
+
 export const allUsers=async(req:authRequest,res:Response,next:NextFunction)=>{
     try{
         const user=req?.user;

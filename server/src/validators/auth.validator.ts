@@ -11,7 +11,7 @@ export const signupschema = z.object({
     z.string().
     nonempty("userName is required").
     min(3,'userName must be atleast 3 characters').
-    max(100,'userName cannot be more than 100 characters'),
+    max(20,'userName cannot be more than 100 characters'),
 
   email: z
     .string()

@@ -26,7 +26,7 @@ const userSchema=new mongoose.Schema<IUser>({
         required:[true,'userName is required'],
         unique:[true,'this username is already taken'],
         minLength:[3,'userName must be atleast 3 characters'],
-        maxLength:[100,'userName cannot be greater than 100 characters'],
+        maxLength:[20,'userName cannot be greater than 100 characters'],
         index:true,
     },
     email:{
