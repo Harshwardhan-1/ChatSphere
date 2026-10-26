@@ -68,21 +68,49 @@ describe("docs_controller",()=>{
            expect(docs.create).toHaveBeenCalled();
         });
     });
-
+    //delete
     describe("delete",()=>{
-        const input={
-            docsId:"123",
-            senderId:"507f1f77bcf86cd799439011",
-        };
         const socket={emit:jest.fn()} as any;
         const io={to:jest.fn().mockReturnValue({emit:jest.fn()})} as any;
         it("it should delete docs successfully",async()=>{
+            const input={
+            docsId:"123",
+            senderId:"456",
+        };
             (docs.findById as jest.Mock).mockResolvedValue({
-                creatoreId:"507f1f77bcf86cd799439011",
+                _id:"123",
+                creatorId:"456",
                 editPermission:["123","456"],
-                viewPermission:["987","654"],
+                viewPermission:["789","987"],
+                deleteOne:jest.fn().mockResolvedValue({}),
             });
-            await deleteDocs(input,socket,io,{});
+            
+            await deleteDocs(input,socket,io,{"789":"receiverSocketId"});
+            expect(socket.emit).toHaveBeenCalledWith("docs_deleted",{docsId:"123",senderId:"456",msg:"This Doc has been deleted by the owner"});
+            expect(io.to).toHaveBeenCalledWith("receiverSocketId")
         });
-    });
-});
+        it("it should give permission denied",async()=>{
+            const input={
+                docsId:"1",
+                senderId:"12",
+            };
+            (docs.findById as jest.Mock).mockResolvedValue({
+                docsId:"123",
+                creatorId:"456",
+                editPermission:["123","456"],
+                viewPermission:["789","654"],
+                deleteOne:jest.fn().mockResolvedValue({}),
+            });
+            await expect(deleteDocs(input,socket,io,{})).rejects.toThrow("don't have access to delete this docs");
+           });
+           it("it should give 404 not found",async()=>{
+            const input={
+                docsId:"1",
+                senderId:"12",
+            };
+            (docs.findById as jest.Mock).mockResolvedValue(null);
+            await expect(deleteDocs(input,socket,io,{})).rejects.toThrow("docs not found");
+        });
+        });
+
+});                 
