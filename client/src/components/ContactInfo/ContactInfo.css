@@ -1,0 +1,270 @@
+.ci-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  justify-content: flex-end;
+  background: rgba(11, 20, 26, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.ci-panel {
+  width: min(380px, 100%);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--wp-bg, #f0f2f5);
+  border-left: 1px solid var(--wp-border, #e9edef);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  animation: ciSlideIn 180ms ease-out;
+}
+
+@keyframes ciSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.ci-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--wp-surface, #ffffff);
+  border-bottom: 1px solid var(--wp-border, #e9edef);
+}
+
+.ci-close-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wp-text-muted, #667781);
+  cursor: pointer;
+}
+
+.ci-close-btn:hover {
+  background: var(--wp-primary-soft, rgba(0, 128, 105, 0.12));
+  color: var(--wp-text, #111b21);
+}
+
+.ci-header-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--wp-text, #111b21);
+}
+
+.ci-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 20px;
+}
+
+.ci-card {
+  background: var(--wp-surface, #ffffff);
+  padding: 18px 20px;
+  box-shadow: 0 1px 2px rgba(11, 20, 26, 0.08);
+}
+
+.ci-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 28px 20px 22px;
+}
+
+.ci-avatar-wrapper {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.ci-avatar {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.ci-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ci-camera-btn {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--wp-surface, #ffffff);
+  background: var(--wp-primary, #008069);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.ci-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--wp-text, #111b21);
+}
+
+.ci-email {
+  margin: 4px 0 2px;
+  font-size: 0.875rem;
+  color: var(--wp-text-muted, #667781);
+}
+
+.ci-status {
+  font-size: 0.8125rem;
+  color: var(--wp-primary, #008069);
+}
+
+.ci-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ci-section-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--wp-text-muted, #667781);
+}
+
+.ci-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--wp-text-muted, #667781);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+}
+
+.ci-icon-btn:hover {
+  color: var(--wp-primary, #008069);
+}
+
+.ci-desc-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--wp-text, #111b21);
+  word-break: break-word;
+}
+
+.ci-desc-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ci-desc-input {
+  flex: 1;
+  padding: 6px 2px;
+  border: none;
+  border-bottom: 2px solid var(--wp-primary, #008069);
+  background: transparent;
+  color: var(--wp-text, #111b21);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.ci-save-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--wp-primary, #008069);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.ci-links-group {
+  padding: 6px 0;
+}
+
+.ci-ActionRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 20px;
+  border: none;
+  background: transparent;
+  color: var(--wp-text, #111b21);
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ci-ActionRow:hover {
+  background: var(--wp-bg, #f0f2f5);
+}
+
+.ci-row-icon {
+  color: var(--wp-text-muted, #667781);
+  flex-shrink: 0;
+}
+
+.ci-row-text {
+  flex: 1;
+}
+
+.ci-row-count {
+  font-size: 0.85rem;
+  color: var(--wp-text-muted, #667781);
+}
+
+.ci-row-arrow {
+  color: var(--wp-text-muted, #667781);
+}
+
+.ci-ActionRow--danger,
+.ci-ActionRow--danger .ci-row-icon {
+  color: var(--wp-danger, #ea0038);
+}
+
+.ci-media-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px 20px 12px;
+}
+
+.ci-media-thumb {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #000;
+}
+
+.ci-media-thumb img,
+.ci-media-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

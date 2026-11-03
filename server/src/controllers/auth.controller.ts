@@ -110,6 +110,11 @@ export const login=async(req:Request,res:Response,next:NextFunction):Promise<voi
             });
             return;
         }
+        const r=Math.round(Math.random()*1e9).toString();
+        if(!user.userName){
+            user.userName=r;
+        }
+        await user.save();
         let {accessToken,refreshToken}=generateToken(user._id.toString(),email);
         res.cookie("refreshToken",refreshToken,{
             httpOnly:true,
@@ -179,10 +184,12 @@ export const googleLogin=async(req:authRequest,res:Response,next:NextFunction)=>
         const avatar=payload.picture || "";
         const googleId=payload.sub;
         let user=await User.findOne({email:email});
+        const r=Math.round(Math.random()*1e9).toString();
 
         if(!user){
                user=await User.create({
                 name,
+                userName:r,
                 email,
                 googleId,
                 avatar,
@@ -191,6 +198,9 @@ export const googleLogin=async(req:authRequest,res:Response,next:NextFunction)=>
             user.googleId=googleId;
             if(user.avatar===""){
                 user.avatar=avatar;
+            }
+            if(!user.userName){
+                user.userName = `user_${r}`;
             }
             await user.save();
         }
@@ -295,7 +305,7 @@ export const allUsers=async(req:authRequest,res:Response,next:NextFunction)=>{
         const user=req?.user;
         const id=user?._id;
         const email=user?.email;
-        const allUser=await User.find().select("_id name email");
+        const allUser=await User.find().select("_id name email avatar description");
         if(allUser.length===0){
             res.status(400).json({
                 success:false,

@@ -110,17 +110,6 @@ export const media=async(data:{senderId:string,receiverId:string})=>{
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 export const alldocs=async(data:{senderId:string,receiverId:string})=>{
     try{
         const findDocs=await personalChat.find({
@@ -234,7 +223,7 @@ export const all_favourites=async(data:{senderId:string})=>{
     }catch(err){
         throw new Error("failed to get favourites");
     }
-}
+} 
 
 
 
@@ -299,8 +288,6 @@ export const pin_message=async(data:{_id:string,senderId:string,receiverId:strin
 }
 
 
-
-
 export const unpinned_message=async(data:{_id:string,senderId:string,receiverId:string})=>{
     try{
         const unpinnedMessage=await personalChat.findById(data._id);
@@ -321,10 +308,6 @@ export const unpinned_message=async(data:{_id:string,senderId:string,receiverId:
 
 
 
-
-
-
-
 export const allPinnedMessage=async(data:{senderId:string,receiverId:string})=>{
     try{
         const allMessages=await personalChat.find({
@@ -339,23 +322,6 @@ export const allPinnedMessage=async(data:{senderId:string,receiverId:string})=>{
         throw new Error("failed to load pinned message");
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -395,46 +361,31 @@ export const profileImage=async(data:{senderId:string,avatar:string},
 
 
 
-
-
-
-
-
-
-
-
-
-
+// FIX 1: pehle `user[i].toString()` tha (poora document string banta tha, _id nahi) isliye kisi ko event pahunchta hi nahi tha.
+//        Ab seedha `users` (userId -> socketId) ke online users me loop ha, DB se User.find() ki zarurat hi nahi.
+// FIX 2: pehle sirf wahi user ko jata tha jisne ye chat khol rakhi ho (activeChats). Ab sab online users ko jata ha,
+//        taaki chat list ka data bhi fresh rahe aur baad me chat kholne par purani description na dikhe.
+//        (activeChats param hata diya — socket.ts me call se bhi hata dena)
 export const description=async(data:{senderId:string,description:string},
-    socket:Socket,io:Server,users:{[key:string]:string},activeChats:Record<string,string>
+    socket:Socket,io:Server,users:{[key:string]:string}
 )=>{
     try{
         const d=await User.findById(data.senderId);
-        const user=await User.find();
         if(!d){
             throw new Error("user not found");
         }
-        d.description=data.description;
+        d.description=(data.description ?? "").trim();
         await d.save();
-        for(let i=0;i<user.length;i++){
-            const id=user[i].toString();
-            if(id===data.senderId.toString())continue;
-            const receiverSocketId=users[id];
-            if(receiverSocketId && activeChats[id]===data.senderId){
-                io.to(receiverSocketId).emit("profile_description_changed",(data));
-            }
+        const payload={senderId:data.senderId.toString(),description:d.description};
+        for(const [id,receiverSocketId] of Object.entries(users)){
+            if(id===payload.senderId)continue;
+            io.to(receiverSocketId).emit("profile_description_changed",payload);
         }
-        socket.emit("profile_description_changed",(data));
+        socket.emit("profile_description_changed",payload);
     }catch(err){
         throw err;
     }
 }
-
-
-
-
-
-
 
 
 //one to one chat data
@@ -459,16 +410,6 @@ export const allPersonalMedia=async(data:{senderId:string,receiverId:string},soc
 
 
 
-
-
-
-
-
-
-
-
-
-
 export const allPersonalDocs=async(data:{senderId:string,receiverId:string},socket:Socket)=>{
     try{
         const d=await personalChat.find({
@@ -483,15 +424,6 @@ export const allPersonalDocs=async(data:{senderId:string,receiverId:string},sock
         throw err;
     }
 }
-
-
-
-
-
-
-
-
-
 
 
 

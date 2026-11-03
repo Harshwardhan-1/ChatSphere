@@ -1,37 +1,42 @@
 import { FiPaperclip } from "react-icons/fi";
 import { useEffect, useState, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChatTalk } from "../../hooks/use.chatTalk";
-import { showApiError } from "../../utils/showApiError";
-import { MessageAction } from "../../actions/message.action";
-import {socket} from "../../utils/socket";
-import type { Message } from "../../hooks/use.chatTalk";
+import { ChatTalk } from "../../hooks/use.chatTalk.ts";
+import { showApiError } from "../../utils/showApiError.ts";
+import { MessageAction } from "../../actions/message.action.ts";
+import {socket} from "../../utils/socket.ts";
+import type { Message } from "../../hooks/use.chatTalk.ts";
 import "./chatPage.css";
 import "./chatPage.whatsapp.css";
-import {env} from '../../configs/env.config';
-import { chatPageOption } from "../../actions/chatpage.action";
-import { DisappearingMessage } from "../../components/disapperingMessage/disappearing.message";
-import { MuteNotification } from "../../components/muteNotification/mute.notification";
-import { Media } from "../../components/ChatMedia/media/media";
-import { Docs } from "../../components/ChatMedia/docs/docs";
-import { ShowLinks } from "../../components/ChatMedia/links/link";
-import { renderMessageWithLinks } from "../../utils/linkify/linkify";
-import { addToFavourites } from "../../components/addToFavourites/addToFavourites";
-import { PinMessage } from "../../components/PinMessage/pinMessage";
+import {env} from '../../configs/env.config.ts';
+import { chatPageOption } from "../../actions/chatpage.action.ts";
+import { DisappearingMessage } from "../../components/disapperingMessage/disappearing.message.tsx";
+import { MuteNotification } from "../../components/muteNotification/mute.notification.tsx";
+import { Media } from "../../components/ChatMedia/media/media.tsx";
+import { Docs } from "../../components/ChatMedia/docs/docs.tsx";
+import { ShowLinks } from "../../components/ChatMedia/links/link.tsx";
+import { renderMessageWithLinks } from "../../utils/linkify/linkify.tsx";
+import { addToFavourites } from "../../components/addToFavourites/addToFavourites.tsx";
+import { PinMessage } from "../../components/PinMessage/pinMessage.tsx";
 import { Bell,BellOff,Phone,Video,Download } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useRef } from "react";
-import { emojiOnMessages } from "../../hooks/use.emoji.hook";
-import { FooterEmoji } from "../../components/FooterEmoji/FooterEmoji";
-import { ForwardModal } from "../../components/ForwardMessage/ForwardModel"; 
-import { useCall } from "../../components/Call/CallContext";
+import { emojiOnMessages } from "../../hooks/use.emoji.hook.ts";
+import { FooterEmoji } from "../../components/FooterEmoji/FooterEmoji.tsx";
+import { ForwardModal } from "../../components/ForwardMessage/ForwardModel.tsx"; 
+import { useCall } from "../../components/Call/CallContext.tsx";
 import { Trash2,Clock,VolumeX,Image,FileText,Link2,Pencil,Forward,Copy,Pin as PinIcon,PinOff,EyeOff } from "lucide-react";
-import axiosInstance from "../../services/axiosInstance";
+import axiosInstance from "../../services/axiosInstance.ts";
+// NAYA — header me naam/avatar par click karne par right side me khulne wala contact info panel
+import { ContactInfo } from "../../components/ContactInfo/ContactInfo.tsx";
 
+// NAYA — avatar / description optional hain: backend ke User me ye fields hain, alluser se aaye toh panel me dikhenge
 interface User {
     _id: string;
     name: string;
     email: string;
+    avatar?: string;
+    description?: string;
 }
 
 interface CurrentUser {
@@ -80,6 +85,9 @@ const ChatPage = ({ data, data2 }: Props) => {
   const reactionRef=useRef<HTMLDivElement | null>(null);
   const [reactionMessage,setReactionMessage]=useState<string | null>(null);  
   const colors = ["#FF6B6B","#4ECDC4","#45B7D1","#F7B731","#5F27CD","#10AC84","#EE5253","#2E86DE"];
+
+  // NAYA — contact info panel (right side) khula ha ya nahi
+  const [showInfo, setShowInfo] = useState<boolean>(false);
 
   // NAYA DOCS — docs message par click karke docs page kholne ke liye
   const navigate = useNavigate();
@@ -441,6 +449,13 @@ const ChatPage = ({ data, data2 }: Props) => {
     }
   }
 
+  // NAYA — contact info panel ke options: media/docs/links/mute/disappearing kholne par panel band ho jata ha
+  // (taaki wo side screen dikhe); "clear chat" me confirm cancel ho toh panel khula rehta ha
+  const handleInfoSelect = (value: string) => {
+    if (value !== "clear chat") setShowInfo(false);
+    handleSelect(value);
+  };
+
 interface Pin{
   _id:string,
   senderId:string,
@@ -544,10 +559,28 @@ const handleRemoveReaction = (messageId: string, currentEmoji: string) => {
   return (
     <div className="chat">
       <div className="chatHeader">
-        <div className="chatHeaderLeft">
-          <div className="avat"style={{backgroundColor:colors[(data?.name?.charCodeAt(0) || 0) % colors.length]}}>
-              {data?.name?.charAt(0).toUpperCase()}
-                </div>
+        {/* NAYA — naam / avatar par click karne par contact info panel right side me khulta ha */}
+        <div
+          className="chatHeaderLeft"
+          style={{ cursor: "pointer" }}
+          role="button"
+          tabIndex={0}
+          title={isSelfChat ? "Your info" : "Contact info"}
+          onClick={() => setShowInfo(true)}
+          onKeyDown={(e) => { if (e.key === "Enter") setShowInfo(true); }}
+        >
+          
+<div className="avat" style={{ backgroundColor: colors[(data?.name?.charCodeAt(0) || 0) % colors.length], overflow: "hidden" }}>
+  {data?.avatar ? (
+    <img
+      src={/^(https?:|data:|blob:)/i.test(data.avatar) ? data.avatar : `${env.backendUrl}${data.avatar}`}
+      alt={data.name}
+      style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+    />
+  ) : (
+    data?.name?.charAt(0).toUpperCase()
+  )}
+</div>
          
          
           <div className="userInfo"><h4>{data?.name}</h4>
@@ -1096,6 +1129,21 @@ const handleRemoveReaction = (messageId: string, currentEmoji: string) => {
               selectedMessageIds={selectedMsgIds}
               onForwarded={cancelSelection}
               sourceType="personal"
+          />
+      )}
+
+      {/* NAYA — Contact info panel: header me naam/avatar par click se right side me khulta ha */}
+      {showInfo && (
+          <ContactInfo
+              contact={data}
+              isSelf={isSelfChat}
+              statusText={isSelfChat ? "Message yourself" : (status === "online" ? "online" : presence ? presence : "offline")}
+              avatarColor={colors[(data?.name?.charCodeAt(0) || 0) % colors.length]}
+              messages={displayMessages}
+              favouriteLabel={alreadyMarked}
+              onToggleFavourite={toggleFavourite}
+              onSelect={handleInfoSelect}
+              onClose={() => setShowInfo(false)}
           />
       )}
     </div>
