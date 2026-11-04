@@ -68,7 +68,7 @@ export function AddGroupMembersModal({ users, selectedIds,senderId, setSelectedI
                     <input className="agm-group-name" type="text" placeholder="Enter group name" value={groupName} onChange={(e) => setGroupName(e.target.value)} />
                 </div>
                 <div className="agm-search-wrap">
-                    <span className="agm-search-icon">🔍</span>
+                    <span className="agm-search-icon"></span>
                     <input className="agm-search" type="text" placeholder="Search by name" value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
                 {selectedIds.length > 0 && <div className="agm-selected-count">{selectedIds.length} selected</div>}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, Plus } from "lucide-react";
+import { ArrowLeft, FileText, Plus, Sun, Moon, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { DocsHook } from "../../hooks/use.docs.hooks";
 import type { DocsItem } from "../../hooks/use.docs.hooks";
 import { CreateDocsPanel } from "./DocsPanel";
@@ -15,6 +15,23 @@ export function Docs() {
     const [selectedId, setSelectedId] = useState<string | null>(location.state?.openDocsId ?? null);
     const [showCreate, setShowCreate] = useState(false);
     const [openDocMenuId, setOpenDocMenuId] = useState<string | null>(null);
+
+    // Same theme state as GroupChat & ChannelChat
+    const [theme, setTheme] = useState<"light" | "dark">(() => {
+        const saved = localStorage.getItem("wp-theme") || localStorage.getItem("theme");
+        if (saved === "dark" || saved === "light") return saved;
+        return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    });
+
+    useEffect(() => {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("wp-theme", theme);
+        localStorage.setItem("theme", theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    };
 
     const {
         allDocs, docsLoaded, users, creating, createdDocsId,
@@ -40,8 +57,23 @@ export function Docs() {
         return () => { socket.off("docs_deleted", onDocDeleted); };
     }, [selectedId]);
 
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (!target.closest(".docs-item-menu")) {
+                setOpenDocMenuId(null);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     if (!senderId) {
-        return <div className="docs-placeholder">User not found. Please go back and open Docs again.</div>;
+        return (
+            <div className="docs-page" data-theme={theme}>
+                <div className="docs-placeholder">User not found. Please go back and open Docs again.</div>
+            </div>
+        );
     }
 
     const selectedDoc = allDocs.find((d) => d._id === selectedId);
@@ -67,16 +99,33 @@ export function Docs() {
     };
 
     return (
-        <div className="docs-page">
+        <div className="docs-page" data-theme={theme}>
             <aside className="docs-sidebar">
                 <div className="docs-sidebar-header">
-                    <button className="docs-icon-btn" onClick={() => navigate(-1)} aria-label="Back">
+                    <button className="docs-icon-btn" onClick={() => navigate(-1)} aria-label="Back" title="Back">
                         <ArrowLeft size={20} />
                     </button>
                     <h2>Docs</h2>
-                    <button className="docs-icon-btn" onClick={() => setShowCreate(true)} aria-label="New document">
-                        <Plus size={22} />
-                    </button>
+                    <div className="docs-header-actions">
+                        <button
+                            type="button"
+                            className="docs-icon-btn"
+                            onClick={toggleTheme}
+                            aria-label="Toggle theme"
+                            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                        >
+                            {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+                        </button>
+                        <button
+                            type="button"
+                            className="docs-icon-btn"
+                            onClick={() => setShowCreate(true)}
+                            aria-label="New document"
+                            title="New document"
+                        >
+                            <Plus size={22} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="docs-list">
@@ -100,15 +149,26 @@ export function Docs() {
                                 {isCreator && (
                                     <div className="docs-item-menu">
                                         <button
+                                            type="button"
                                             className="docs-item-menu-btn"
-                                            onClick={(e) => { e.stopPropagation(); setOpenDocMenuId(openDocMenuId === d._id ? null : d._id); }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenDocMenuId(openDocMenuId === d._id ? null : d._id);
+                                            }}
+                                            aria-label="Document options"
                                         >
-                                            ⋮
+                                            <MoreVertical size={18} />
                                         </button>
                                         {openDocMenuId === d._id && (
                                             <div className="docs-item-menu-dropdown" onClick={(e) => e.stopPropagation()}>
-                                                <div className="docs-item-menu-option" onClick={() => handleRename(d)}>Rename</div>
-                                                <div className="docs-item-menu-option docs-item-menu-option--danger" onClick={() => handleDelete(d)}>Delete</div>
+                                                <div className="docs-item-menu-option" onClick={() => handleRename(d)}>
+                                                    <Pencil size={15} />
+                                                    <span>Rename</span>
+                                                </div>
+                                                <div className="docs-item-menu-option docs-item-menu-option--danger" onClick={() => handleDelete(d)}>
+                                                    <Trash2 size={15} />
+                                                    <span>Delete</span>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -130,12 +190,22 @@ export function Docs() {
 
             <main className="docs-main">
                 {selectedDoc ? (
-                    <DocsEditor key={selectedDoc._id} senderId={senderId} doc={selectedDoc} users={users} />
+                    <DocsEditor
+                        key={selectedDoc._id}
+                        senderId={senderId}
+                        doc={selectedDoc}
+                        users={users}
+                        theme={theme}
+                        onToggleTheme={toggleTheme}
+                    />
                 ) : (
                     <div className="docs-placeholder">
-                        {selectedId && !docsLoaded && "Opening document..."}
-                        {selectedId && docsLoaded && "Document not found or you don't have access."}
-                        {!selectedId && "Select a document or create a new one."}
+                        <img src="/WhatsApp.svg" alt="WhatsApp" className="docs-placeholder-logo" />
+                        <p>
+                            {selectedId && !docsLoaded && "Opening document..."}
+                            {selectedId && docsLoaded && "Document not found or you don't have access."}
+                            {!selectedId && "Select a document or create a new one."}
+                        </p>
                     </div>
                 )}
             </main>

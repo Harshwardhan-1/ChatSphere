@@ -1,7 +1,7 @@
 import {useState,useEffect} from 'react';
 import {socket} from '../../utils/socket';
 import './GroupProfile.css';
-import axios from 'axios';
+import axiosInstance from '../../services/axiosInstance';
 import { GroupSettings } from '../GroupSettings/GroupSettings';
 import { env } from '../../configs/env.config';
 
@@ -359,11 +359,18 @@ const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
     try{
         const formData = new FormData();
+        formData.append("id", _id);
+        formData.append("senderId", senderId);
         formData.append("file", file);
 
-        const res = await axios.post(`${env.backendUrl}/api/v1/groupImage`, formData, {withCredentials:true});
+        const res = await axiosInstance.post(`${env.backendUrl}/api/v1/groupImage`, formData);
         if(res.data.success){
-            const data = res.data.data;
+            const data = res.data.file ?? res.data.data;
+            if(!data?.path){
+                console.log("Unexpected response:", res.data);
+                return;
+            }
+            setImage(resolveFileUrl(data.path));
             socket.emit("can_change_group_image", {_id, senderId,message: data.path,mimetype: data.mimetype
             });
         }
@@ -414,7 +421,7 @@ if (showGroupSettings) {
 
 
 const handleQr=async()=>{
-    const response=await axios.get(`${env.backendUrl}/api/v1/${_id}`,{withCredentials:true});
+    const response=await axiosInstance.get(`${env.backendUrl}/api/v1/${_id}`);
     if(response.data.success){
         setShowQr(response.data?.qrCode);
     }

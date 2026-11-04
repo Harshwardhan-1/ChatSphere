@@ -1,245 +1,748 @@
+/* ===== Document Chat Panel — Exact GroupChat & ChatPage Theme (Light & Dark Mode) ===== */
+
 .docsChatToggleBtn {
   position: absolute;
   bottom: 24px;
   right: 24px;
-  z-index: 8;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border: none;
   border-radius: 50%;
   background: #00a884;
-  color: #fff;
+  color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  transition: background-color 0.15s ease, transform 0.15s ease;
 }
+
+.docsChatToggleBtn:hover {
+  background: #008f72;
+  transform: scale(1.05);
+}
+
+.docsChatToggleBtn:active {
+  transform: scale(0.96);
+}
+
 .docsChatUnreadBadge {
   position: absolute;
   top: -4px;
   right: -4px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 9px;
-  background: #ff3040;
-  color: #fff;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #25d366;
+  color: #0b141a;
   font-size: 11px;
-  line-height: 18px;
+  font-weight: 700;
+  line-height: 20px;
   text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
 }
 
+/* ================= SLIDING CHAT DRAWER ================= */
 .docsChatPanel {
+  --dcp-bg: #f0f2f5;
+  --dcp-surface: #ffffff;
+  --dcp-surface-alt: #f7f8fa;
+  --dcp-chat-bg: #efeae2;
+  --dcp-text: #111b21;
+  --dcp-text-muted: #667781;
+  --dcp-border: #e9edef;
+  --dcp-primary: #00a884;
+  --dcp-primary-soft: rgba(0, 168, 132, 0.12);
+  --dcp-pop-bg: #ffffff;
+  --dcp-bubble-in: #ffffff;
+  --dcp-bubble-out: #d9fdd3;
+  --dcp-notice-bg: #ffeecd;
+  --dcp-notice-text: #54656f;
+
   position: absolute;
   top: 0;
   right: 0;
-  z-index: 9;
+  bottom: 0;
+  z-index: 40;
   display: flex;
   flex-direction: column;
-  width: 340px;
-  max-width: 90vw;
+  width: 370px;
+  max-width: 100%;
   height: 100%;
-  background: #fff;
-  border-left: 1px solid #e9edef;
-  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+  background: var(--dcp-surface);
+  color: var(--dcp-text);
+  border-left: 1px solid var(--dcp-border);
+  box-shadow: -4px 0 18px rgba(11, 20, 26, 0.18);
+  animation: dcpSlideIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+.docsChatPanel[data-theme="dark"],
+[data-theme="dark"] .docsChatPanel {
+  --dcp-bg: #0b141a;
+  --dcp-surface: #111b21;
+  --dcp-surface-alt: #202c33;
+  --dcp-chat-bg: #0b141a;
+  --dcp-text: #e9edef;
+  --dcp-text-muted: #8696a0;
+  --dcp-border: #222d34;
+  --dcp-primary: #00a884;
+  --dcp-primary-soft: rgba(0, 168, 132, 0.18);
+  --dcp-pop-bg: #233138;
+  --dcp-bubble-in: #202c33;
+  --dcp-bubble-out: #005c4b;
+  --dcp-notice-bg: #182229;
+  --dcp-notice-text: #ffd279;
+}
+
+@keyframes dcpSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* ================= HEADER ================= */
 .docsChatHeader {
+  height: 60px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
-  background: #008069;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 500;
+  padding: 0 16px;
+  background: var(--dcp-surface-alt);
+  border-bottom: 1px solid var(--dcp-border);
+  color: var(--dcp-text);
 }
-.docsChatHeader button { border: none; background: none; color: #fff; cursor: pointer; display: flex; }
 
+.docsChatHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--dcp-text);
+}
+
+.docsChatHeaderTitle svg {
+  color: #00a884;
+}
+
+.docsChatCloseBtn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dcp-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.docsChatCloseBtn:hover {
+  background: var(--dcp-primary-soft);
+  color: var(--dcp-text);
+}
+
+/* ================= MESSAGES BODY (WhatsApp Doodle Wallpaper) ================= */
 .docsChatBody {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 12px;
+  overflow-x: hidden;
+  padding: 16px 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background: #efeae2;
+  gap: 8px;
+  background-color: #efeae2 !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23d1cbc0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.65'%3E%3Cpath d='M25 30h24a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6H35l-8 7v-7h-2a6 6 0 0 1-6-6V36a6 6 0 0 1 6-6z'/%3E%3Cline x1='29' y1='40' x2='45' y2='40'/%3E%3Cline x1='29' y1='46' x2='39' y2='46'/%3E%3Cpath d='M145 35c-4-5-12-5-16 0-4-5-12-5-16 0-5 6-4 14 2 20l14 14 14-14c6-6 7-14 2-20z'/%3E%3Cpolygon points='75,95 79,106 91,106 81,113 85,124 75,117 65,124 69,113 59,106 71,106'/%3E%3Ccircle cx='185' cy='115' r='15'/%3E%3Cpath d='M179 119a8 8 0 0 0 12 0'/%3E%3Ccircle cx='180' cy='111' r='1' fill='%23d1cbc0'/%3E%3Ccircle cx='190' cy='111' r='1' fill='%23d1cbc0'/%3E%3Cpolygon points='25,165 55,152 43,182 37,170'/%3E%3Ccircle cx='115' cy='155' r='10'/%3E%3Cpolyline points='115,150 115,155 119,157'/%3E%3Ccircle cx='98' cy='218' r='5'/%3E%3Ccircle cx='114' cy='215' r='5'/%3E%3Cpolyline points='103,218 103,196 119,193 119,215'/%3E%3Crect x='165' y='198' width='28' height='20' rx='4'/%3E%3Cpath d='M173 198l3-4h6l3 4'/%3E%3Ccircle cx='179' cy='208' r='5'/%3E%3Cpath d='M95 52h6M98 49v6M215 62h6M218 59v6M145 178h6M148 175v6M45 225h6M48 222v6'/%3E%3Ccircle cx='65' cy='155' r='1.5' fill='%23d1cbc0'/%3E%3Ccircle cx='150' cy='105' r='1.5' fill='%23d1cbc0'/%3E%3Ccircle cx='225' cy='155' r='1.5' fill='%23d1cbc0'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-repeat: repeat !important;
+  background-size: 260px 260px !important;
 }
 
-.docsChatMsgRow { display: flex; align-items: flex-end; gap: 6px; max-width: 100%; }
-.docsChatMsgRow.sender { flex-direction: row-reverse; align-self: flex-end; }
-.docsChatMsgRow.receiver { align-self: flex-start; }
+.docsChatPanel[data-theme="dark"] .docsChatBody,
+[data-theme="dark"] .docsChatPanel .docsChatBody {
+  background-color: #0b141a !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.06'%3E%3Cpath d='M25 30h24a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6H35l-8 7v-7h-2a6 6 0 0 1-6-6V36a6 6 0 0 1 6-6z'/%3E%3Cline x1='29' y1='40' x2='45' y2='40'/%3E%3Cline x1='29' y1='46' x2='39' y2='46'/%3E%3Cpath d='M145 35c-4-5-12-5-16 0-4-5-12-5-16 0-5 6-4 14 2 20l14 14 14-14c6-6 7-14 2-20z'/%3E%3Cpolygon points='75,95 79,106 91,106 81,113 85,124 75,117 65,124 69,113 59,106 71,106'/%3E%3Ccircle cx='185' cy='115' r='15'/%3E%3Cpath d='M179 119a8 8 0 0 0 12 0'/%3E%3Ccircle cx='180' cy='111' r='1' fill='%23ffffff'/%3E%3Ccircle cx='190' cy='111' r='1' fill='%23ffffff'/%3E%3Cpolygon points='25,165 55,152 43,182 37,170'/%3E%3Ccircle cx='115' cy='155' r='10'/%3E%3Cpolyline points='115,150 115,155 119,157'/%3E%3Ccircle cx='98' cy='218' r='5'/%3E%3Ccircle cx='114' cy='215' r='5'/%3E%3Cpolyline points='103,218 103,196 119,193 119,215'/%3E%3Crect x='165' y='198' width='28' height='20' rx='4'/%3E%3Cpath d='M173 198l3-4h6l3 4'/%3E%3Ccircle cx='179' cy='208' r='5'/%3E%3Cpath d='M95 52h6M98 49v6M215 62h6M218 59v6M145 178h6M148 175v6M45 225h6M48 222v6'/%3E%3C/g%3E%3C/svg%3E") !important;
+}
 
-.docsChatLikeBlock { position: relative; display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-.docsChatLikeBtn { border: none; background: none; cursor: pointer; color: #667781; display: flex; padding: 2px; }
-.docsChatLikeBtn.liked { color: #ff3040; }
-.docsChatLikeCount { font-size: 11px; color: #667781; cursor: pointer; }
-.docsChatLikersPopup {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  z-index: 4;
-  min-width: 120px;
-  padding: 6px 10px;
+.docsChatBody::-webkit-scrollbar {
+  width: 5px;
+}
+
+.docsChatBody::-webkit-scrollbar-thumb {
+  background: rgba(134, 150, 160, 0.35);
+  border-radius: 10px;
+}
+
+.dcp-empty-notice {
+  margin: 8px auto 12px;
+  padding: 6px 12px;
+  max-width: 92%;
   border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
-  font-size: 13px;
+  background: var(--dcp-notice-bg);
+  color: var(--dcp-notice-text);
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.4;
+  box-shadow: 0 1px 1px rgba(11, 20, 26, 0.12);
 }
 
-.docsChatBubble {
+/* ================= MESSAGE BUBBLES (GroupChat / ChatPage Style) ================= */
+.dcp-message {
   position: relative;
-  max-width: 220px;
-  padding: 7px 10px;
+  display: flow-root;
+  width: fit-content;
+  min-width: 76px;
+  max-width: 82%;
+  padding: 6px 10px 6px 10px;
   border-radius: 8px;
-  background: #fff;
+  font-size: 13.8px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  box-shadow: 0 1px 1px rgba(11, 20, 26, 0.14);
+  margin: 2px 0;
 }
-.docsChatMsgRow.sender .docsChatBubble { background: #d9fdd3; }
 
-.docsChatSenderName { display: block; font-size: 12px; font-weight: 600; color: #008069; margin-bottom: 2px; }
+.dcp-message.has-badges {
+  margin-bottom: 18px;
+}
 
-.docsChatQuoted {
+.dcp-message.sender {
+  align-self: flex-end;
+  background: var(--dcp-bubble-out);
+  color: var(--dcp-text);
+  border-top-right-radius: 0;
+}
+
+.dcp-message.receiver {
+  align-self: flex-start;
+  background: var(--dcp-bubble-in);
+  color: var(--dcp-text);
+  border-top-left-radius: 0;
+}
+
+.dcp-sender-name {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+/* Quoted Parent Message */
+.dcp-quoted {
   display: flex;
   flex-direction: column;
   padding: 4px 8px;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
   border-left: 3px solid #00a884;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(11, 20, 26, 0.06);
   border-radius: 4px;
   font-size: 12px;
 }
-.docsChatQuotedName { font-weight: 600; color: #008069; }
-.docsChatQuotedText { color: #667781; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.docsChatText { margin: 0; font-size: 14px; line-height: 1.4; word-break: break-word; color: #111b21; }
-.docsChatText.deleted { font-style: italic; color: #667781; }
-.docsChatEdited { font-size: 11px; color: #667781; }
-
-.docsChatMsgActions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
+.docsChatPanel[data-theme="dark"] .dcp-quoted,
+[data-theme="dark"] .docsChatPanel .dcp-quoted {
+  background: rgba(255, 255, 255, 0.06);
 }
-.docsChatBubble:hover .docsChatMsgActions { opacity: 1; }
-.docsChatMsgActions button { border: none; background: none; color: #667781; cursor: pointer; display: flex; padding: 2px; }
 
-.docsChatMenu { position: relative; }
-.docsChatMenuDropdown {
-  display: none;
-  position: absolute;
-  top: 100%;
-  right: 0;
-  z-index: 5;
-  min-width: 130px;
-  padding: 4px 0;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+.dcp-quoted-name {
+  font-weight: 700;
+  color: #00a884;
+  font-size: 11.5px;
 }
-.docsChatMenu:hover .docsChatMenuDropdown,
-.docsChatMenu:focus-within .docsChatMenuDropdown { display: block; }
-.docsChatMenuDropdown button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 8px 12px;
-  font-size: 13px;
-  color: #111b21;
+
+.dcp-quoted-text {
+  color: var(--dcp-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.docsChatMenuDropdown button:hover { background: #f0f2f5; }
 
-.docsChatEmojiPopup { position: absolute; bottom: 100%; right: 0; z-index: 6; }
+/* Text & Meta */
+.dcp-text {
+  display: inline;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: inherit;
+}
 
-.docsChatReactionBadge {
+.dcp-text.deleted {
+  font-style: italic;
+  color: var(--dcp-text-muted);
+}
+
+.dcp-text a {
+  color: #027eb5;
+  text-decoration: underline;
+}
+
+.docsChatPanel[data-theme="dark"] .dcp-text a,
+[data-theme="dark"] .docsChatPanel .dcp-text a {
+  color: #53bdeb;
+}
+
+.dcp-meta {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  margin-top: 4px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  font-size: 12px;
+  gap: 4px;
+  float: right;
+  margin: 4px 0 -2px 8px;
+  font-size: 10.5px;
+  color: var(--dcp-text-muted);
+  user-select: none;
+}
+
+.dcp-edited {
+  font-style: italic;
+}
+
+/* ================= HOVER ACTION BAR & DROPDOWN MENU ================= */
+.dcp-hover-bar {
+  position: absolute;
+  top: -12px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 25;
+  transition: opacity 0.14s ease;
+}
+
+.dcp-message.sender .dcp-hover-bar {
+  right: 4px;
+}
+
+.dcp-message.receiver .dcp-hover-bar {
+  left: 4px;
+}
+
+.dcp-message:hover .dcp-hover-bar,
+.dcp-hover-bar:hover,
+.dcp-hover-bar:has(.dcp-menu-wrap.open) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dcp-action-circle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--dcp-border);
+  background: var(--dcp-surface);
+  color: var(--dcp-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.16);
+  transition: transform 0.12s ease, color 0.12s ease, background-color 0.12s ease;
 }
-.docsChatReactionCount { color: #667781; }
 
-.docsChatReactionDetail {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  z-index: 5;
-  min-width: 140px;
-  max-height: 180px;
-  overflow-y: auto;
-  padding: 4px 0;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+.dcp-action-circle:hover {
+  background: var(--dcp-surface-alt);
+  color: var(--dcp-text);
+  transform: scale(1.08);
 }
-.docsChatReactionRow { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; font-size: 13px; cursor: pointer; }
-.docsChatReactionRow:hover { background: #f0f2f5; }
 
-.docsChatViewedByPopup {
+.dcp-action-circle.liked {
+  color: #ea0038;
+}
+
+.dcp-menu-wrap {
+  position: relative;
+}
+
+.dcp-menu-dropdown {
   position: absolute;
-  bottom: 100%;
+  top: calc(100% + 4px);
   right: 0;
-  z-index: 5;
-  min-width: 140px;
-  max-height: 180px;
-  overflow-y: auto;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  min-width: 145px;
+  background: var(--dcp-pop-bg);
+  border: 1px solid var(--dcp-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  padding: 5px 0;
+  z-index: 60;
+}
+
+.dcp-message.receiver .dcp-menu-dropdown {
+  right: auto;
+  left: 0;
+}
+
+.dcp-menu-wrap.up .dcp-menu-dropdown {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+.dcp-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dcp-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.12s ease;
+}
+
+.dcp-menu-item svg {
+  color: var(--dcp-text-muted);
+  flex-shrink: 0;
+}
+
+.dcp-menu-item:hover {
+  background: var(--dcp-surface-alt);
+}
+
+.dcp-menu-item.danger,
+.dcp-menu-item.danger svg {
+  color: #ea0038;
+}
+
+/* ================= INLINE EDIT ================= */
+.dcp-inline-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 190px;
+  margin-top: 2px;
+}
+
+.dcp-inline-edit input {
+  width: 100%;
+  padding: 6px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--dcp-border);
+  background: var(--dcp-surface);
+  color: var(--dcp-text);
+  font-size: 13px;
+  outline: none;
+}
+
+.dcp-inline-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.dcp-inline-edit-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #00a884;
+  color: #fff;
+}
+
+.dcp-inline-edit-actions button:last-child {
+  background: var(--dcp-surface-alt);
+  color: var(--dcp-text-muted);
+}
+
+/* ================= REACTION & LIKE BADGES ================= */
+.dcp-badges-row {
+  position: absolute;
+  bottom: -14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 15;
+}
+
+.dcp-message.sender .dcp-badges-row {
+  right: 6px;
+}
+
+.dcp-message.receiver .dcp-badges-row {
+  left: 6px;
+}
+
+.dcp-reaction-badge,
+.dcp-like-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+  padding: 0 7px;
+  background: var(--dcp-surface);
+  color: var(--dcp-text);
+  border: 1px solid var(--dcp-border);
+  border-radius: 999px;
+  font-size: 12px;
+  box-shadow: 0 1px 4px rgba(11, 20, 26, 0.2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.dcp-badge-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dcp-text-muted);
+}
+
+/* ================= MODALS & EMOJI OVERLAY ================= */
+.dcp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(11, 20, 26, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.dcp-emoji-popup {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.dcp-modal-card {
+  width: min(320px, 92vw);
+  max-height: min(400px, 78vh);
+  background: var(--dcp-pop-bg);
+  color: var(--dcp-text);
+  border: 1px solid var(--dcp-border);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dcp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14.5px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.dcp-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--dcp-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+}
+
+.dcp-modal-close:hover {
+  background: var(--dcp-surface-alt);
+  color: var(--dcp-text);
+}
+
+.dcp-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.dcp-add-rx-pill,
+.dcp-rx-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--dcp-surface-alt);
+  border: 1px solid var(--dcp-border);
+  color: var(--dcp-text);
   font-size: 13px;
 }
-.docsChatViewedByTitle { display: block; font-weight: 600; margin-bottom: 4px; color: #008069; }
 
-.docsChatEditBox { display: flex; gap: 6px; margin-top: 4px; }
-.docsChatEditBox input { flex: 1; padding: 4px 6px; border: 1px solid #d1d7db; border-radius: 4px; font-size: 13px; }
-.docsChatEditBox button { border: none; background: none; color: #00a884; font-size: 12px; cursor: pointer; }
+.dcp-add-rx-pill {
+  cursor: pointer;
+  color: #00a884;
+}
 
+.dcp-rx-pill-count {
+  font-size: 11.5px;
+  color: var(--dcp-text-muted);
+  font-weight: 600;
+}
+
+.dcp-modal-divider {
+  height: 1px;
+  background: var(--dcp-border);
+  margin: 4px 0 8px;
+}
+
+.dcp-modal-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dcp-modal-empty {
+  padding: 12px 4px;
+  font-size: 13px;
+  color: var(--dcp-text-muted);
+  text-align: center;
+}
+
+.dcp-modal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.dcp-modal-row.is-me {
+  cursor: pointer;
+}
+
+.dcp-modal-row.is-me:hover {
+  background: var(--dcp-primary-soft);
+}
+
+.dcp-modal-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dcp-modal-user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dcp-modal-user-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--dcp-text);
+}
+
+.dcp-modal-hint {
+  font-size: 11px;
+  color: var(--dcp-text-muted);
+}
+
+.dcp-modal-emoji {
+  font-size: 18px;
+}
+
+/* ================= REPLY PREVIEW & FOOTER COMPOSER ================= */
 .docsChatReplyPreview {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: #f0f2f5;
-  border-top: 1px solid #e9edef;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--dcp-surface-alt);
+  border-top: 1px solid var(--dcp-border);
 }
-.docsChatReplyPreview button { border: none; background: none; color: #667781; cursor: pointer; display: flex; }
+
+.docsChatReplyContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding-left: 8px;
+  border-left: 3px solid #00a884;
+}
+
+.docsChatReplyClose {
+  border: none;
+  background: transparent;
+  color: var(--dcp-text-muted);
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+  border-radius: 50%;
+}
+
+.docsChatReplyClose:hover {
+  background: var(--dcp-primary-soft);
+  color: var(--dcp-text);
+}
 
 .docsChatComposer {
+  min-height: 60px;
+  flex-shrink: 0;
   display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 10px 12px;
-  background: #f0f2f5;
-  border-top: 1px solid #e9edef;
+  padding: 8px 12px;
+  background: var(--dcp-surface-alt);
+  border-top: 1px solid var(--dcp-border);
 }
+
 .docsChatComposer input {
   flex: 1;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 20px;
-  background: #fff;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--dcp-border);
+  border-radius: 10px;
+  background: var(--dcp-surface);
+  color: var(--dcp-text);
   outline: none;
   font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
 }
+
+.docsChatComposer input::placeholder {
+  color: var(--dcp-text-muted);
+}
+
+.docsChatComposer input:focus {
+  border-color: #00a884;
+}
+
 .docsChatComposer button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
   border: none;
   border-radius: 50%;
   background: #00a884;
-  color: #fff;
+  color: #ffffff;
   cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.docsChatComposer button:hover:not(:disabled) {
+  background: #008f72;
+}
+
+.docsChatComposer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

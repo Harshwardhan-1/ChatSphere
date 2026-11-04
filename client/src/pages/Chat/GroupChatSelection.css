@@ -1,79 +1,63 @@
 .selectionBar {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 14px 20px;
-    background: #008069;
-    color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--gc-bar-bg, #f0f2f5);
+  color: var(--wp-text, #111b21);
+  border-bottom: 1px solid var(--wp-border, #e9edef);
+  z-index: 5;
 }
 
-.selectionCancelBtn {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 20px;
-    cursor: pointer;
-    line-height: 1;
-    padding: 4px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s ease;
+.selectionCancelBtn,
+.selectionForwardBtn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wp-text-muted, #667781);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
 }
 
-.selectionCancelBtn:hover {
-    background: rgba(255, 255, 255, 0.12);
+.selectionCancelBtn:hover,
+.selectionForwardBtn:hover:not(:disabled) {
+  background: var(--wp-primary-soft, rgba(0, 128, 105, 0.12));
+  color: var(--wp-primary, #008069);
 }
 
 .selectionCount {
-    flex: 1;
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.selectionForwardBtn {
-    background: rgba(255, 255, 255, 0.15);
-    border: none;
-    color: #fff;
-    font-size: 18px;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s ease;
-}
-
-.selectionForwardBtn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.28);
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 .selectionForwardBtn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .message.selectable {
-    cursor: pointer;
-    padding-left: 34px;
-    position: relative;
+  cursor: pointer;
+  padding-left: 36px;
+  position: relative;
 }
 
 .message.selectedMsg {
-    background: rgba(0, 168, 132, 0.12);
-    border-radius: 8px;
+  box-shadow: 0 0 0 2px var(--wp-primary, #008069) inset;
 }
 
 .messageSelectCheckbox {
-    position: absolute;
-    left: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
-    accent-color: #00a884;
-    cursor: pointer;
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  accent-color: var(--wp-primary, #008069);
+  cursor: pointer;
 }

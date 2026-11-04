@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { showApiError } from "../../utils/showApiError";
-import axios from "axios";
+import axiosInstance from "../../services/axiosInstance";
 import { env } from "../../configs/env.config";
 import { socket } from "../../utils/socket";
 import "./CreateChannel.css";
@@ -27,7 +27,7 @@ export function CreateChannel({ onBack, senderId }: Props) {
             const formData = new FormData();
             formData.append("file", selected);
             // this is basically channel image, just path is different
-            const res = await axios.post(`${env.backendUrl}/api/v1/groupImage`, formData, { withCredentials: true });
+            const res = await axiosInstance.post("/groupImage", formData);
             if (res.data.success) {
                 console.log(res.data.data);
                 setProfilePic(res.data.data.path);

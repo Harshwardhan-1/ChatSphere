@@ -1,18 +1,36 @@
+/* ===== Channel profile panel: theme (light / dark) ke hisaab se =====
+   Colors .channel-chat-page ke --gc-* variables se aate hain,
+   isliye dark mode me apne aap badal jate hain. */
+
 .channel-profile-panel {
     position: absolute;
     top: 0;
     right: 0;
     height: 100%;
-    width: 400px;     
-    max-width: 100%;   
-    background-color: #ffffff;
-    z-index: 40;
+    width: 400px;
+    max-width: 100%;
+    background-color: var(--gc-surface, #ffffff);
+    color: var(--gc-text, #111b21);
+    /* channel-window-header ka z-index 100 hai; isse upar rakha hai
+       taaki panel ka header + back button dab na jaye */
+    z-index: 200;
     display: flex;
     flex-direction: column;
-    box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
     animation: channelProfileSlideIn 0.25s ease-out;
     overflow-y: auto;
-    border-left: 1px solid #e9edef;
+    border-left: 1px solid var(--gc-border, #e9edef);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(134, 150, 160, 0.4) transparent;
+}
+
+.channel-profile-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.channel-profile-panel::-webkit-scrollbar-thumb {
+    background: rgba(134, 150, 160, 0.35);
+    border-radius: 10px;
 }
 
 @keyframes channelProfileSlideIn {
@@ -20,33 +38,55 @@
     to { transform: translateX(0); }
 }
 
+/* ---------- Header + Back button ---------- */
+
 .channel-profile-header {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    border-bottom: 1px solid #e9edef;
+    gap: 12px;
+    height: 60px;
+    flex-shrink: 0;
+    padding: 0 16px;
+    background: var(--gc-surface-alt, #f7f8fa);
+    border-bottom: 1px solid var(--gc-border, #e9edef);
 }
 
 .channel-profile-back {
-    background: transparent;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
     border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--gc-text, #111b21);
     cursor: pointer;
-    color: #54656f;
     display: flex;
     align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.channel-profile-back:hover {
+    background: var(--gc-primary-soft, rgba(0, 168, 132, 0.12));
+    color: var(--gc-primary, #00a884);
+}
+
+.channel-profile-back:active {
+    transform: scale(0.94);
 }
 
 .channel-profile-title {
     font-size: 17px;
     font-weight: 600;
-    color: #111b21;
+    color: var(--gc-text, #111b21);
     margin: 0;
 }
 
 .channel-profile-spacer {
     flex: 1;
 }
+
+/* ---------- Body ---------- */
 
 .channel-profile-body {
     display: flex;
@@ -61,6 +101,7 @@
     border-radius: 50%;
     overflow: hidden;
     margin-bottom: 16px;
+    background: var(--gc-primary-soft, rgba(0, 168, 132, 0.12));
 }
 
 .channel-profile-avatar {
@@ -69,19 +110,102 @@
     object-fit: cover;
 }
 
+.channel-profile-avatar-editable {
+    position: relative;
+    cursor: pointer;
+}
+
+.channel-profile-avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.45);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.channel-profile-avatar-editable:hover .channel-profile-avatar-overlay {
+    opacity: 1;
+}
+
+/* ---------- Name ---------- */
+
+.channel-profile-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
 .channel-profile-name {
     font-size: 22px;
     font-weight: 500;
-    color: #111b21;
-    margin: 0 0 4px;
+    color: var(--gc-text, #111b21);
+    margin: 0;
     text-align: center;
+    word-break: break-word;
+}
+
+.channel-profile-name-edit {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.channel-profile-name-edit input {
+    width: 100%;
+    background: var(--gc-surface-alt, #f7f8fa);
+    color: var(--gc-text, #111b21);
+    border: 1px solid var(--gc-border, #e9edef);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.channel-profile-name-edit input:focus {
+    border-color: var(--gc-primary, #00a884);
+    box-shadow: 0 0 0 3px var(--gc-primary-soft, rgba(0, 168, 132, 0.12));
+}
+
+.channel-profile-name-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.channel-profile-name-edit-actions button {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    background-color: var(--gc-border, #e9edef);
+    color: var(--gc-text, #111b21);
+}
+
+.channel-profile-name-edit-actions button:last-child {
+    background-color: var(--gc-primary, #00a884);
+    color: #ffffff;
 }
 
 .channel-profile-meta {
     font-size: 14px;
-    color: #667781;
+    color: var(--gc-text-muted, #667781);
     margin: 0 0 24px;
 }
+
+/* ---------- Media / Links / Docs buttons ---------- */
 
 .channel-profile-actions {
     display: flex;
@@ -100,24 +224,31 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background-color: #f0f2f5;
-    border: none;
+    background-color: var(--gc-surface-alt, #f0f2f5);
+    border: 1px solid var(--gc-border, #e9edef);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: #111b21;
+    color: var(--gc-primary, #00a884);
+    transition: background-color 0.15s ease;
+}
+
+.channel-profile-action-btn:hover {
+    background-color: var(--gc-primary-soft, rgba(0, 168, 132, 0.12));
 }
 
 .channel-profile-action span {
     font-size: 13px;
-    color: #111b21;
+    color: var(--gc-text, #111b21);
 }
+
+/* ---------- Description ---------- */
 
 .channel-profile-section {
     width: 100%;
     padding: 16px 4px;
-    border-top: 1px solid #e9edef;
+    border-top: 1px solid var(--gc-border, #e9edef);
 }
 
 .channel-profile-description-row {
@@ -129,31 +260,47 @@
 
 .channel-profile-description-text {
     font-size: 14px;
-    color: #111b21;
+    color: var(--gc-text, #111b21);
     flex: 1;
+    word-break: break-word;
 }
 
 .channel-profile-description-placeholder {
-    color: #667781;
+    color: var(--gc-text-muted, #667781);
 }
 
 .channel-profile-edit-btn {
     background: transparent;
     border: none;
     cursor: pointer;
-    color: #00a884;
+    color: var(--gc-primary, #00a884);
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
 }
 
 .channel-profile-description-edit textarea {
     width: 100%;
     min-height: 60px;
-    border: 1px solid #d1d7db;
-    border-radius: 6px;
-    padding: 8px;
+    background: var(--gc-surface-alt, #f7f8fa);
+    color: var(--gc-text, #111b21);
+    border: 1px solid var(--gc-border, #e9edef);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font: inherit;
     font-size: 14px;
     resize: vertical;
     outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.channel-profile-description-edit textarea::placeholder {
+    color: var(--gc-text-muted, #667781);
+}
+
+.channel-profile-description-edit textarea:focus {
+    border-color: var(--gc-primary, #00a884);
+    box-shadow: 0 0 0 3px var(--gc-primary-soft, rgba(0, 168, 132, 0.12));
 }
 
 .channel-profile-description-edit-actions {
@@ -165,156 +312,458 @@
 
 .channel-profile-description-edit-actions button {
     border: none;
-    border-radius: 4px;
-    padding: 6px 12px;
+    border-radius: 6px;
+    padding: 6px 14px;
     font-size: 13px;
     cursor: pointer;
 }
 
-.channel-profile-description-edit-actions button:last-child {
-    background-color: #00a884;
-    color: #fff;
+.channel-profile-description-edit-actions button:first-child {
+    background-color: var(--gc-border, #e9edef);
+    color: var(--gc-text, #111b21);
 }
 
-.channel-profile-description-edit-actions button:first-child {
-    background-color: #e9edef;
-    color: #111b21;
+.channel-profile-description-edit-actions button:last-child {
+    background-color: var(--gc-primary, #00a884);
+    color: #ffffff;
 }
 
 .channel-profile-created {
     font-size: 13px;
-    color: #667781;
+    color: var(--gc-text-muted, #667781);
     margin-top: 24px;
 }
 
 .channel-profile-loading {
     padding: 24px;
-    color: #667781;
+    color: var(--gc-text-muted, #667781);
     font-size: 14px;
 }
 
+/* ---------- Tabs (agar kahin use ho) ---------- */
 
-.channel-profile-avatar-editable {
-    position: relative;
-    cursor: pointer;
+.channel-profile-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
-.channel-profile-avatar-overlay {
+.channel-profile-tabs {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--gc-border, #e9edef);
+    padding: 0 20px;
+    flex-shrink: 0;
+}
+
+.channel-profile-tabs button {
+    border: none;
+    background: none;
+    padding: 14px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gc-text-muted, #667781);
+    cursor: pointer;
+    position: relative;
+}
+
+.channel-profile-tabs button:hover {
+    color: var(--gc-text, #111b21);
+}
+
+.channel-profile-tabs button.active {
+    color: var(--gc-primary, #00a884);
+}
+
+.channel-profile-tabs button.active::after {
+    content: "";
     position: absolute;
-    inset: 0;
-    background-color: rgba(0,0,0,0.35);
-    border-radius: 50%;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--gc-primary, #00a884);
+}
+
+.channel-profile-tab-content {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.channel-profile-empty {
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--gc-text-muted, #667781);
+    font-size: 14px;
+}
+
+/* ---------- Mute notifications row ---------- */
+
+.channel-profile-panel .mute-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0;
+    padding: 16px 24px;
+    color: var(--gc-text, #111b21);
+    border-top: 1px solid var(--gc-border, #e9edef);
+}
+
+.channel-profile-panel .toggle {
+    width: 44px;
+    height: 24px;
+    border: none;
+    border-radius: 20px;
+    background: var(--gc-text-muted, #ccc);
+    padding: 2px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.channel-profile-panel .toggle-circle {
+    display: block;
+    width: 20px;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.channel-profile-panel .toggle.active {
+    background: var(--gc-primary, #00a884);
+}
+
+.channel-profile-panel .toggle.active .toggle-circle {
+    transform: translateX(20px);
+}
+
+
+/* =====================================================================
+   Channel ke Media / Docs / Links panels
+   (ye components ChatMedia ki CSS use karte hain, jo one-to-one chat ke
+   hisaab se bani hai. Yahan .channel-chat-page ke andar un classes ko
+   override kiya hai taaki channel me theme ke saath sahi dikhe.)
+   ===================================================================== */
+
+.channel-chat-page .mediaPage,
+.channel-chat-page .docsPage,
+.channel-chat-page .linksPage {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: auto;
+    bottom: auto;
+    height: 100%;
+    width: 400px;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: var(--gc-surface, #ffffff);
+    color: var(--gc-text, #111b21);
+    border-left: 1px solid var(--gc-border, #e9edef);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+    /* channel-window-header ka z-index 100 hai, usse upar */
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: channelProfileSlideIn 0.25s ease-out;
+}
+
+/* ---------- Header + Back button (teeno panels me same) ---------- */
+
+.channel-chat-page .mediaHeader,
+.channel-chat-page .docsHeader,
+.channel-chat-page .linksHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 60px;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0 16px;
+    background: var(--gc-surface-alt, #f7f8fa);
+    border-bottom: 1px solid var(--gc-border, #e9edef);
+}
+
+.channel-chat-page .mediaHeader h2,
+.channel-chat-page .docsHeader h2,
+.channel-chat-page .linksHeader h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--gc-text, #111b21);
+}
+
+.channel-chat-page .backArrow {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--gc-text, #111b21);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.channel-chat-page .backArrow:hover {
+    background: var(--gc-primary-soft, rgba(0, 168, 132, 0.12));
+    color: var(--gc-primary, #00a884);
+}
+
+.channel-chat-page .backArrow:active {
+    transform: scale(0.94);
+}
+
+/* ---------- Media grid ---------- */
+
+.channel-chat-page .mediaGrid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    align-content: start;
+    padding: 8px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(134, 150, 160, 0.4) transparent;
+}
+
+.channel-chat-page .mediaThumb {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--gc-surface-alt, #f0f2f5);
+    cursor: pointer;
+}
+
+.channel-chat-page .mediaThumb img,
+.channel-chat-page .mediaThumb video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.channel-chat-page .videoThumbWrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.channel-chat-page .playIcon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.channel-chat-page .noMediaFound,
+.channel-chat-page .noDocsFound,
+.channel-chat-page .noLinksFound {
+    grid-column: 1 / -1;
+    padding: 40px 16px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--gc-text-muted, #667781);
+}
+
+/* ---------- Media preview (full screen) ---------- */
+
+.channel-chat-page .mediaPreviewOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background: rgba(11, 20, 26, 0.96);
+}
+
+.channel-chat-page .mediaPreviewTop {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 60px;
+    flex-shrink: 0;
+    padding: 0 16px;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.channel-chat-page .mediaPreviewTop .backArrow {
+    color: #ffffff;
+}
+
+.channel-chat-page .mediaPreviewTop .backArrow:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+}
+
+.channel-chat-page .mediaPreviewName {
+    flex: 1;
+    min-width: 0;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.channel-chat-page .mediaPreviewContent {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.channel-chat-page .mediaPreviewContent img,
+.channel-chat-page .mediaPreviewContent video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+/* ---------- Docs + Links list ---------- */
+
+.channel-chat-page .docsList,
+.channel-chat-page .linksList {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(134, 150, 160, 0.4) transparent;
+}
+
+.channel-chat-page .docRow,
+.channel-chat-page .linkRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gc-border, #e9edef);
+    color: var(--gc-text, #111b21);
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+}
+
+.channel-chat-page .docRow:hover,
+.channel-chat-page .linkRow:hover {
+    background: var(--gc-surface-alt, #f7f8fa);
+}
+
+.channel-chat-page .docIconBox,
+.channel-chat-page .linkIconBox {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.channel-chat-page .docIconBox.pdf { background: #e5493a; }
+.channel-chat-page .docIconBox.ppt { background: #e0752d; }
+.channel-chat-page .docIconBox.doc { background: #2b7cd3; }
+.channel-chat-page .docIconBox.xls { background: #1f9d55; }
+.channel-chat-page .docIconBox.generic { background: #667781; }
+
+.channel-chat-page .linkIconBox {
+    background: var(--gc-primary-soft, rgba(0, 168, 132, 0.12));
+    color: var(--gc-primary, #00a884);
+    font-size: 18px;
+}
+
+.channel-chat-page .docInfo,
+.channel-chat-page .linkInfo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.channel-chat-page .docName,
+.channel-chat-page .linkDomain {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--gc-text, #111b21);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.channel-chat-page .docMeta {
+    font-size: 12px;
+    color: var(--gc-text-muted, #667781);
+}
+
+.channel-chat-page .linkUrl {
+    font-size: 12.5px;
+    color: var(--gc-primary, #00a884);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.channel-chat-page .docDate,
+.channel-chat-page .linkDate {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--gc-text-muted, #667781);
+}
+
+.channel-delete-section {
+    margin-top: 25px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.channel-delete-btn {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid #dc3545;
+    border-radius: 10px;
+    background: transparent;
+    color: #dc3545;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.channel-delete-btn:hover {
+    background: #dc3545;
     color: #fff;
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-
-.channel-profile-avatar-editable:hover .channel-profile-avatar-overlay {
-    opacity: 1;
-}
-
-
-
-.channel-profile-content{
-    display:flex;
-    flex-direction:column;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-}
-
-.channel-profile-tabs{
-    display:flex;
-    align-items:center;
-    border-bottom:1px solid #e9edef;
-    padding:0 20px;
-    flex-shrink:0;
-}
-
-.channel-profile-tabs button{
-    border:none;
-    background:none;
-    padding:14px 18px;
-    font-size:14px;
-    font-weight:500;
-    color:#667781;
-    cursor:pointer;
-    position:relative;
-}
-
-.channel-profile-tabs button:hover{
-    color:#111b21;
-}
-
-.channel-profile-tabs button.active{
-    color:#00a884;
-}
-
-.channel-profile-tabs button.active::after{
-    content:"";
-    position:absolute;
-    bottom:0;
-    left:0;
-    right:0;
-    height:2px;
-    background:#00a884;
-}
-
-.channel-profile-tab-content{
-    flex:1;
-    min-height:0;
-    overflow:auto;
-}
-
-.channel-profile-empty{
-    width:100%;
-    height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#667781;
-    font-size:14px;
-}
-
-
-
-
-
-
-.mute-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: black;
-  margin-left: 15px;
-}
-
-.toggle {
-  width: 44px;
-  height: 24px;
-  border: none;
-  border-radius: 20px;
-  background: #ccc;
-  padding: 2px;
-  cursor: pointer;
-}
-
-.toggle-circle {
-  display: block;
-  width: 20px;
-  height: 20px;
-  background: white;
-  border-radius: 50%;
-  transition: 0.2s;
-}
-
-.toggle.active {
-  background: #25d366;
-}
-
-.toggle.active .toggle-circle {
-  transform: translateX(20px);
 }

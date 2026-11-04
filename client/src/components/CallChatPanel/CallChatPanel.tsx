@@ -9,16 +9,17 @@ interface Props {
     groupId:string;
     senderId:string;
     getMemberName:(id:string)=>string;
+    onClose?:()=>void;
 }
 
-export function CallChatPanel({ callId, groupId, senderId, getMemberName }: Props) {
+export function CallChatPanel({ callId, groupId, senderId, getMemberName, onClose }: Props) {
     const {
         messages, viewedByList,
         sendMessage, sendReply, deleteMessage, editMessage,
         toggleLike, toggleReaction, markViewed, fetchViewedBy,
     } = useInCallChat(callId, groupId, senderId);
 
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(true);
     const [unread, setUnread] = useState(0);
     const [text, setText] = useState("");
     const [replyTarget, setReplyTarget] = useState<CallChatMessage | null>(null);
@@ -103,18 +104,25 @@ export function CallChatPanel({ callId, groupId, senderId, getMemberName }: Prop
         setViewedByFor(msgId);
     };
 
+    const handleClosePanel = () => {
+        setIsOpen(false);
+        onClose?.();
+    };
+
     return (
         <>
-            <button className="callChatToggleBtn" onClick={() => setIsOpen(v => !v)}>
-                <MessageCircle size={20} />
-                {unread > 0 && <span className="callChatUnreadBadge">{unread > 99 ? "99+" : unread}</span>}
-            </button>
+            {!isOpen && (
+                <button className="callChatToggleBtn" onClick={() => setIsOpen(true)}>
+                    <MessageCircle size={20} />
+                    {unread > 0 && <span className="callChatUnreadBadge">{unread > 99 ? "99+" : unread}</span>}
+                </button>
+            )}
 
             {isOpen && (
                 <div className="callChatPanel">
                     <div className="callChatHeader">
                         <span>Call Chat</span>
-                        <button onClick={() => setIsOpen(false)}><X size={18} /></button>
+                        <button onClick={handleClosePanel}><X size={18} /></button>
                     </div>
 
                     <div className="callChatBody">
@@ -153,7 +161,7 @@ export function CallChatPanel({ callId, groupId, senderId, getMemberName }: Prop
                                         </div>
                                     )}
 
-                                    <div className="callChatBubble">
+                                    <div className={`callChatBubble${msg.reaction?.length > 0 ? " hasReactions" : ""}`}>
                                         {!isSender && (
                                             <span className="callChatSenderName">
                                                 {typeof msg.senderId === "object" ? msg.senderId.name : getMemberName(msgSenderId)}
@@ -208,10 +216,24 @@ export function CallChatPanel({ callId, groupId, senderId, getMemberName }: Prop
                                         )}
 
                                         {reactionFor === msg._id && (
-                                            <div className="callChatEmojiPopup" ref={reactionRef}>
-                                                <EmojiPicker
-                                                    onEmojiClick={(e) => { toggleReaction(msg._id, e.emoji); setReactionFor(null); }}
-                                                />
+                                            <div
+                                                style={{
+                                                    position: "fixed",
+                                                    inset: 0,
+                                                    zIndex: 10000,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    background: "rgba(0,0,0,0.4)",
+                                                }}
+                                            >
+                                                <div ref={reactionRef}>
+                                                    <EmojiPicker
+                                                        width={320}
+                                                        height={400}
+                                                        onEmojiClick={(e) => { toggleReaction(msg._id, e.emoji); setReactionFor(null); }}
+                                                    />
+                                                </div>
                                             </div>
                                         )}
 
@@ -222,30 +244,80 @@ export function CallChatPanel({ callId, groupId, senderId, getMemberName }: Prop
                                             </div>
                                         )}
 
-                                        {reactionDetailFor === msg._id && (
-                                            <div className="callChatReactionDetail" ref={reactionDetailRef}>
-                                                {msg.reaction.map((r) => (
-                                                    <div
-                                                        key={r._id || r.userId + r.emoji}
-                                                        className="callChatReactionRow"
-                                                        onClick={() => { if (r.userId === senderId) toggleReaction(msg._id, r.emoji); }}
-                                                    >
-                                                        <span>{r.userId === senderId ? "You" : getMemberName(r.userId)}</span>
-                                                        <span>{r.emoji}</span>
+                                        {reactionDetailFor === msg._id && msg.reaction?.length > 0 && (
+                                            <div className="callChatRxOverlay">
+                                                <div className="callChatReactionDetail" ref={reactionDetailRef}>
+                                                    <div className="callChatRxHead">
+                                                        <span>{msg.reaction.length} reaction{msg.reaction.length > 1 ? "s" : ""}</span>
+                                                        <button type="button" onClick={() => setReactionDetailFor(null)}>
+                                                            <X size={16} />
+                                                        </button>
                                                     </div>
-                                                ))}
+
+                                                    <div className="callChatRxPills">
+                                                        {Object.entries(groupReactions(msg.reaction)).map(([emoji, emojiUsers]) => (
+                                                            <div key={emoji} className="callChatRxPill">
+                                                                <span>{emoji}</span>
+                                                                <span className="callChatRxPillN">{emojiUsers.length}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <div className="callChatRxDivider" />
+
+                                                    <div className="callChatRxList">
+                                                        {msg.reaction.map((r) => {
+                                                            const isMe = r.userId === senderId;
+                                                            const rName = isMe ? "You" : getMemberName(r.userId);
+                                                            return (
+                                                                <div
+                                                                    key={r._id || r.userId + r.emoji}
+                                                                    className={`callChatReactionRow${isMe ? " is-me" : ""}`}
+                                                                    onClick={() => { if (isMe) toggleReaction(msg._id, r.emoji); }}
+                                                                >
+                                                                    <div className="callChatRxAvatar">
+                                                                        {rName.charAt(0).toUpperCase()}
+                                                                    </div>
+                                                                    <div className="callChatRxInfo">
+                                                                        <span className="callChatRxName">{rName}</span>
+                                                                        {isMe && <span className="callChatRxHint">Tap to remove</span>}
+                                                                    </div>
+                                                                    <span className="callChatRxEmoji">{r.emoji}</span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
 
-                                       {viewedByFor === msg._id && isSender && (
-                                    <div className="callChatViewedByPopup" ref={viewedByRef}>
-                                        <span className="callChatViewedByTitle">Seen by</span>
-                                        {viewedByList.filter(u => u._id !== senderId).length === 0 && <div>No one yet</div>}
-                                        {viewedByList.filter(u => u._id !== senderId).map(u => (
-                                            <div key={u._id}>{u.name || u.username || "Unknown"}</div>
-                                        ))}
-                                    </div>
-                                )}
+                                        {viewedByFor === msg._id && isSender && (
+                                            <div className="callChatRxOverlay">
+                                                <div className="callChatViewedByPopup" ref={viewedByRef}>
+                                                    <div className="callChatRxHead">
+                                                        <span>Seen by</span>
+                                                        <button type="button" onClick={() => setViewedByFor(null)}>
+                                                            <X size={16} />
+                                                        </button>
+                                                    </div>
+                                                    {viewedByList.filter(u => u._id !== senderId).length === 0 && (
+                                                        <div className="callChatSeenEmpty">No one yet</div>
+                                                    )}
+                                                    {viewedByList.filter(u => u._id !== senderId).map(u => {
+                                                        const vName = u.name || u.username || "Unknown";
+                                                        return (
+                                                            <div key={u._id} className="callChatSeenRow">
+                                                                <div className="callChatRxAvatar">
+                                                                    {vName.charAt(0).toUpperCase()}
+                                                                </div>
+                                                                <span className="callChatRxName">{vName}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {editingId === msg._id && (
                                             <div className="callChatEditBox">
                                                 <input value={editText} onChange={(e) => setEditText(e.target.value)} autoFocus />

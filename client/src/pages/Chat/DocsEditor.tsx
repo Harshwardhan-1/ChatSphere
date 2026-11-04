@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
-import { Download, FileText, Users } from "lucide-react";
+import { Download, FileText, Users, Sun, Moon } from "lucide-react";
 import { DocsRoomHook, LOCAL_ORIGIN, REMOTE_ORIGIN } from "../../hooks/use.docs.hooks";
 import type { DocsItem, DocsUser } from "../../hooks/use.docs.hooks";
 import { DocsChatPanel } from "../../components/DocsChatPanel/DocsChatPanel";
@@ -9,11 +9,12 @@ interface Props {
     senderId: string;
     doc: DocsItem;
     users: DocsUser[];
+    theme: "light" | "dark";
+    onToggleTheme: () => void;
 }
 
 type DeltaOp = { insert?: unknown; delete?: number; retain?: number };
 
-// Dusre ka change aane par mera cursor apni jagah rahe, isliye position shift karte hain
 const shiftPos = (pos: number, delta: DeltaOp[]) => {
     let index = 0;
     for (const op of delta) {
@@ -33,7 +34,7 @@ const shiftPos = (pos: number, delta: DeltaOp[]) => {
 const isHigh = (c: number) => c >= 0xd800 && c <= 0xdbff;
 const isLow = (c: number) => c >= 0xdc00 && c <= 0xdfff;
 
-export function DocsEditor({ senderId, doc, users }: Props) {
+export function DocsEditor({ senderId, doc, users, theme, onToggleTheme }: Props) {
     const {
         ydoc, ready, canEdit, online, downloads, requested,
         editRequests, isCreator, requestEdit, approveEdit, notifyDownload,
@@ -43,17 +44,15 @@ export function DocsEditor({ senderId, doc, users }: Props) {
     const [showRequests, setShowRequests] = useState(false);
     const ytext = ydoc.getText("content");
 
-    // NAYA — docs chat panel me message-sender ka naam dikhane ke liye
     const getMemberName = (id: string) => users.find((u) => u._id === id)?.name || "Unknown";
 
-    // Y.Text  ->  textarea (sirf dusre ke changes)
     useEffect(() => {
         const ta = taRef.current;
         if (!ta) return;
         ta.value = ytext.toString();
 
         const observer = (event: Y.YTextEvent, tr: Y.Transaction) => {
-            if (tr.origin !== REMOTE_ORIGIN) return; // apna type kiya hua dobara set nahi karna
+            if (tr.origin !== REMOTE_ORIGIN) return;
             const start = shiftPos(ta.selectionStart, event.delta as DeltaOp[]);
             const end = shiftPos(ta.selectionEnd, event.delta as DeltaOp[]);
             ta.value = ytext.toString();
@@ -64,7 +63,6 @@ export function DocsEditor({ senderId, doc, users }: Props) {
         return () => ytext.unobserve(observer);
     }, [ytext]);
 
-    // textarea  ->  Y.Text (sirf jitna badla utna hi bhejte hain)
     const handleChange = () => {
         const ta = taRef.current;
         if (!ta || !canEdit) return;
@@ -84,7 +82,6 @@ export function DocsEditor({ senderId, doc, users }: Props) {
             ne--;
         }
 
-        // emoji (surrogate pair) beech se na toote
         if (s > 0 && isHigh(prev.charCodeAt(s - 1))) s--;
         if (pe < prev.length && isLow(prev.charCodeAt(pe))) {
             pe++;
@@ -120,6 +117,15 @@ export function DocsEditor({ senderId, doc, users }: Props) {
                 </div>
 
                 <div className="de-actions">
+                    <button
+                        type="button"
+                        className="docs-icon-btn"
+                        onClick={onToggleTheme}
+                        title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    >
+                        {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+
                     <span className="de-online" title="People in this document">
                         <Users size={16} /> {online}
                     </span>
@@ -173,10 +179,12 @@ export function DocsEditor({ senderId, doc, users }: Props) {
                 />
             </div>
 
-            <DocsChatPanel 
-            docsId={doc._id} 
-            senderId={senderId} 
-            getMemberName={getMemberName} />
+            <DocsChatPanel
+                docsId={doc._id}
+                senderId={senderId}
+                getMemberName={getMemberName}
+                theme={theme}
+            />
         </div>
     );
 }

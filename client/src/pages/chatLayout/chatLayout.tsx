@@ -6,9 +6,11 @@ import { CallProvider } from "../../components/CallProvider/CallProvider";
 import "./ChatLayout.css";
 
 interface User {
-  _id: string;
-  name: string;
-  email: string;
+  _id:string;
+  name:string;
+  email:string;
+  avatar?:string;
+  description?:string;
 }
 
 const ChatLayout = () => {

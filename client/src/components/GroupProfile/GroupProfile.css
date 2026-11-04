@@ -1,94 +1,101 @@
+
+/* ===== WhatsApp Web Group Info Sidebar ===== */
+
 .groupProfilePage {
-    width: 400px;
-    max-width: 100%;
-    background: #fff;
-    height: 100%;
-    overflow-y: auto;
-    box-shadow: -2px 0 12px rgba(0,0,0,0.15);
     position: fixed;
     top: 0;
     right: 0;
+    width: 400px;
+    max-width: 100%;
+    height: 100dvh;
     z-index: 1000;
-    animation: slideInRight 0.25s ease-out;
-}
-
-.groupProfileNameRow {
-    cursor: pointer;
-}
-
-.editNameBox {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    align-items: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    background: var(--wp-surface, #ffffff);
+    color: var(--wp-text, #111b21);
+
+    border-left: 1px solid var(--wp-border, #e9edef);
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.12);
+
+    animation: groupProfileSlide 0.22s ease-out;
 }
 
-.editNameBox input {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    width: 85%;
-    font-size: 15px;
-    outline: none;
+[data-theme="dark"] .groupProfilePage {
+    background: #111b21;
+    color: #e9edef;
+    border-left-color: #26343b;
 }
 
-.editNameBox input:focus {
-    border-color: #00a884;
-}
-
-.editNameBtns {
-    display: flex;
-    gap: 8px;
-}
-
-.editNameBtns button {
-    padding: 6px 16px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.editNameBtns button:first-child {
-    background: #f0f2f5;
-    color: #111b21;
-}
-
-.editNameBtns button:last-child {
-    background: #00a884;
-    color: #fff;
-}
-.editImageOverlay.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-@keyframes slideInRight {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
-}
+/* Header */
 
 .groupProfileTopBar {
-    padding: 12px 16px;
-    border-bottom: 1px solid #eee;
+    height: 60px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 0 20px;
+
     position: sticky;
     top: 0;
-    background: #fff;
-    z-index: 2;
+    z-index: 5;
+
+    background: var(--wp-surface, #ffffff);
+    border-bottom: 1px solid var(--wp-border, #e9edef);
+}
+
+[data-theme="dark"] .groupProfileTopBar {
+    background: #202c33;
+    border-color: #2a3942;
 }
 
 .backArrow {
-    background: none;
+    width: 36px;
+    height: 36px;
     border: none;
-    font-size: 20px;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--wp-text-muted, #667781);
+    font-size: 25px;
     cursor: pointer;
-    color: #54656f;
+    display: grid;
+    place-items: center;
+    transition: 0.2s;
 }
 
+.backArrow:hover {
+    background: var(--wp-primary-soft, #e9f5f1);
+    color: #00a884;
+}
+
+.groupProfileTopBar::after {
+    content: "Group info";
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--wp-text, #111b21);
+}
+
+[data-theme="dark"] .groupProfileTopBar::after {
+    color: #e9edef;
+}
+
+/* Group Hero */
+
 .groupProfileHero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    padding: 24px 16px;
-    border-bottom: 8px solid #f0f2f5;
+    padding: 32px 20px 26px;
+
+    border-bottom: 8px solid var(--wp-bg, #f0f2f5);
+}
+
+[data-theme="dark"] .groupProfileHero {
+    border-bottom-color: #0b141a;
 }
 
 .groupProfileAvatar {
@@ -97,8 +104,9 @@
     border-radius: 50%;
     overflow: hidden;
     margin: 0 auto 16px;
-    background: #ddd;
     position: relative;
+    background: var(--wp-surface-alt, #f0f2f5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .groupProfileAvatar img {
@@ -112,52 +120,177 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(0,0,0,0.5);
-    color: #fff;
-    text-align: center;
-    padding: 6px 0;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.58);
+    color: white;
     font-size: 14px;
     cursor: pointer;
+}
+
+.editImageOverlay.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .groupProfileNameRow {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 9px;
+    cursor: pointer;
 }
 
 .groupProfileNameRow h2 {
-    font-size: 20px;
     margin: 0;
-    color: #111b21;
+    font-size: 21px;
+    font-weight: 500;
+    color: var(--wp-text, #111b21);
+    overflow-wrap: anywhere;
+}
+
+[data-theme="dark"] .groupProfileNameRow h2 {
+    color: #e9edef;
 }
 
 .editIcon {
     background: none;
     border: none;
+    color: #00a884;
     cursor: pointer;
-    font-size: 14px;
-    color: #667781;
+    font-size: 17px;
 }
 
+.editNameBox {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
 
+.editNameBox input {
+    width: 90%;
+    padding: 10px 12px;
+    border: none;
+    border-bottom: 2px solid #00a884;
+    background: transparent;
+    color: var(--wp-text, #111b21);
+    outline: none;
+    font-size: 16px;
+}
 
-/* --- Add this block to your existing GroupProfile.css --- */
+[data-theme="dark"] .editNameBox input {
+    color: #e9edef;
+}
+
+.editNameBtns {
+    display: flex;
+    gap: 12px;
+}
+
+.editNameBtns button {
+    border: none;
+    padding: 8px 22px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.editNameBtns button:first-child {
+    background: var(--wp-surface-alt, #f0f2f5);
+    color: var(--wp-text, #111b21);
+}
+
+.editNameBtns button:last-child {
+    background: #00a884;
+    color: white;
+}
+
+/* Action Buttons */
+
+.groupProfileActions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 20px 16px;
+    margin: 0;
+
+    border-bottom: 8px solid var(--wp-bg, #f0f2f5);
+}
+
+[data-theme="dark"] .groupProfileActions {
+    border-bottom-color: #0b141a;
+}
+
+.groupProfileActions button {
+    min-width: 0;
+    min-height: 76px;
+    padding: 10px 5px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+
+    border: 1px solid var(--wp-border, #e9edef);
+    border-radius: 10px;
+
+    background: var(--wp-surface, #ffffff);
+    color: var(--wp-text, #111b21);
+
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+[data-theme="dark"] .groupProfileActions button {
+    background: #202c33;
+    border-color: #2a3942;
+    color: #e9edef;
+}
+
+.groupProfileActions button:hover:not(:disabled) {
+    background: var(--wp-primary-soft, #e7f7f1);
+    border-color: #00a884;
+    color: #00a884;
+    transform: translateY(-2px);
+}
+
+.groupProfileActions button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Participants */
 
 .groupMembersSection {
-    margin-top: 16px;
-    background: #fff;
+    flex: 1;
+    padding-bottom: 20px;
+    background: var(--wp-surface, #ffffff);
+}
+
+[data-theme="dark"] .groupMembersSection {
+    background: #111b21;
 }
 
 .groupMembersHeader {
-    padding: 12px 16px;
+    padding: 18px 20px 12px;
     font-size: 14px;
-    color: #667781;
     font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    border-bottom: 1px solid #e9edef;
+    color: var(--wp-text-muted, #667781);
+    border-bottom: 1px solid var(--wp-border, #e9edef);
+}
+
+[data-theme="dark"] .groupMembersHeader {
+    border-color: #26343b;
 }
 
 .groupMembersList {
@@ -166,28 +299,37 @@
 }
 
 .groupMemberRow {
+    min-height: 68px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
+    gap: 13px;
+    padding: 10px 20px;
     cursor: default;
+    transition: background 0.15s;
 }
 
 .groupMemberRow:hover {
-    background: #f5f6f6;
+    background: var(--wp-surface-alt, #f5f6f6);
+}
+
+[data-theme="dark"] .groupMemberRow:hover {
+    background: #202c33;
 }
 
 .groupMemberAvatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    overflow: hidden;
+    width: 46px;
+    height: 46px;
     flex-shrink: 0;
-    background: #00a884;
+    overflow: hidden;
+    border-radius: 50%;
+
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+
+    background: #00a884;
+    color: white;
+    font-size: 17px;
     font-weight: 600;
 }
 
@@ -202,77 +344,137 @@
     flex-direction: column;
     flex: 1;
     min-width: 0;
+    gap: 4px;
 }
 
 .groupMemberName {
     font-size: 15px;
-    color: #111b21;
+    color: var(--wp-text, #111b21);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+[data-theme="dark"] .groupMemberName {
+    color: #e9edef;
+}
+
 .groupMemberAbout {
     font-size: 13px;
-    color: #667781;
+    color: var(--wp-text-muted, #8696a0);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .adminBadge {
-    font-size: 12px;
-    color: #667781;
+    padding: 3px 9px;
+    border-radius: 5px;
+    background: var(--wp-primary-soft, #e7f7f1);
+    color: #00a884;
+    font-size: 11px;
+    font-weight: 600;
     flex-shrink: 0;
 }
 
+/* Add / Remove / Admin Modal */
 
-.addMembersOverlay {
+.addMembersOverlay,
+.qrModalOverlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
 }
 
-.addMembersModal {
-    background: #fff;
+.addMembersModal,
+.qrModalBox {
     width: 420px;
-    max-height: 80vh;
-    border-radius: 12px;
+    max-width: 100%;
+    max-height: 85dvh;
+
     display: flex;
     flex-direction: column;
     overflow: hidden;
+
+    background: var(--wp-surface, #ffffff);
+    color: var(--wp-text, #111b21);
+
+    border: 1px solid var(--wp-border, #e9edef);
+    border-radius: 14px;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .addMembersModal,
+[data-theme="dark"] .qrModalBox {
+    background: #111b21;
+    color: #e9edef;
+    border-color: #2a3942;
 }
 
 .addMembersHeader {
+    min-height: 60px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px;
-    border-bottom: 1px solid #eee;
+    gap: 14px;
+    padding: 14px 20px;
+
+    background: var(--wp-surface-alt, #f7f8fa);
+    border-bottom: 1px solid var(--wp-border, #e9edef);
+}
+
+[data-theme="dark"] .addMembersHeader {
+    background: #202c33;
+    border-color: #2a3942;
+}
+
+.addMembersHeader h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
 }
 
 .addMembersHeader .closeBtn {
-    background: none;
     border: none;
-    font-size: 18px;
+    background: transparent;
+    color: var(--wp-text-muted, #667781);
+    font-size: 20px;
     cursor: pointer;
 }
 
 .addMembersSearch {
-    margin: 12px 16px;
-    padding: 10px 14px;
-    border-radius: 20px;
-    border: 1px solid #ddd;
+    margin: 14px 16px;
+    padding: 11px 16px;
+
+    border: 1px solid var(--wp-border, #ddd);
+    border-radius: 8px;
     outline: none;
+
+    background: var(--wp-bg, #f0f2f5);
+    color: var(--wp-text, #111b21);
+    font-size: 14px;
+}
+
+[data-theme="dark"] .addMembersSearch {
+    background: #202c33;
+    border-color: #2a3942;
+    color: #e9edef;
+}
+
+.addMembersSearch:focus {
+    border-color: #00a884;
 }
 
 .addMembersList {
-    overflow-y: auto;
     flex: 1;
+    overflow-y: auto;
     padding: 0 8px;
 }
 
@@ -280,13 +482,17 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 8px;
-    cursor: pointer;
+    padding: 11px 12px;
     border-radius: 8px;
+    cursor: pointer;
 }
 
 .addMembersRow:hover {
-    background: #f5f5f5;
+    background: var(--wp-surface-alt, #f5f5f5);
+}
+
+[data-theme="dark"] .addMembersRow:hover {
+    background: #202c33;
 }
 
 .addMembersRow.alreadyMember {
@@ -296,58 +502,310 @@
 
 .addMembersAvatar img,
 .addMembersAvatar span {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #ddd;
+    background: #00a884;
+    color: white;
+    font-weight: 600;
+    object-fit: cover;
 }
 
 .addMembersInfo {
     display: flex;
     flex-direction: column;
+    gap: 3px;
+}
+
+.addMembersName {
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .alreadyMemberTag {
     font-size: 11px;
-    color: #999;
+    color: var(--wp-text-muted, #8696a0);
 }
 
 .addMembersFooter {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    padding: 12px 16px;
-    border-top: 1px solid #eee;
+    padding: 14px 20px;
+
+    background: var(--wp-surface-alt, #f7f8fa);
+    border-top: 1px solid var(--wp-border, #e9edef);
+}
+
+[data-theme="dark"] .addMembersFooter {
+    background: #202c33;
+    border-color: #2a3942;
+}
+
+.addMembersFooter button {
+    padding: 9px 22px;
+    border-radius: 22px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
 }
 
 .addMembersFooter .cancelBtn {
-    background: none;
-    border: 1px solid #ccc;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--wp-border, #ccc);
+    color: var(--wp-text, #111b21);
+}
+
+[data-theme="dark"] .addMembersFooter .cancelBtn {
+    color: #e9edef;
+    border-color: #374248;
 }
 
 .addMembersFooter .saveBtn {
     background: #00a884;
-    color: #fff;
+    color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
 }
 
 .addMembersFooter .saveBtn:disabled {
-    background: #ccc;
+    opacity: 0.45;
     cursor: not-allowed;
 }
 
-.groupProfileActions {
-    display: flex;
-    gap: 8px;
-    margin: 12px 0;
-    flex-wrap: wrap;
+/* QR Modal */
+
+.qrModalBox {
+    width: 320px;
+    padding: 24px;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+}
+
+.qrModalBox img {
+    width: 220px;
+    height: 220px;
+    padding: 10px;
+    object-fit: contain;
+    background: white;
+    border-radius: 8px;
+}
+
+.qrModalBox button {
+    width: 100%;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 22px;
+    background: #00a884;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.qrModalBox button:hover {
+    background: #008f70;
+}
+
+/* Scrollbar */
+
+.groupProfilePage::-webkit-scrollbar,
+.addMembersList::-webkit-scrollbar {
+    width: 5px;
+}
+
+.groupProfilePage::-webkit-scrollbar-thumb,
+.addMembersList::-webkit-scrollbar-thumb {
+    background: rgba(134, 150, 160, 0.35);
+    border-radius: 10px;
+}
+
+/* Animation */
+
+@keyframes groupProfileSlide {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Responsive */
+
+@media (max-width: 600px) {
+    .groupProfilePage {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .groupProfileAvatar {
+        width: 105px;
+        height: 105px;
+    }
+
+    .groupProfileActions {
+        gap: 8px;
+        padding: 16px 12px;
+    }
+
+    .groupProfileActions button {
+        min-height: 70px;
+        font-size: 11px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .groupProfilePage {
+        animation: none;
+    }
+
+    .groupProfilePage *,
+    .groupProfilePage *::before,
+    .groupProfilePage *::after {
+        transition: none !important;
+    }
+}
+
+/* ===== FINAL WHATSAPP RIGHT SIDEBAR FIX ===== */
+
+.groupProfilePage {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: auto !important;
+    bottom: 0 !important;
+
+    width: 400px !important;
+    min-width: 400px !important;
+    max-width: 400px !important;
+    height: 100dvh !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+
+    z-index: 9999 !important;
+
+    background: var(--wp-surface, #ffffff) !important;
+    color: var(--wp-text, #111b21) !important;
+
+    border-left: 1px solid var(--wp-border, #e9edef) !important;
+    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.12) !important;
+
+    animation: groupProfileSlide 0.22s ease-out;
+}
+
+[data-theme="dark"] .groupProfilePage {
+    background: #111b21 !important;
+    color: #e9edef !important;
+}
+
+/* Header */
+
+.groupProfilePage .groupProfileTopBar {
+    width: 100% !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    padding: 0 20px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* Hero */
+
+.groupProfilePage .groupProfileHero {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 28px 20px !important;
+    flex-shrink: 0 !important;
+}
+
+/* Action buttons */
+
+.groupProfilePage .groupProfileActions {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    padding: 16px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+}
+
+.groupProfilePage .groupProfileActions button {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 65px !important;
+    height: auto !important;
+    padding: 9px 5px !important;
+    box-sizing: border-box !important;
+
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+
+    border: 1px solid var(--wp-border, #e9edef) !important;
+    border-radius: 10px !important;
+
+    background: var(--wp-surface-alt, #f7f8fa) !important;
+    color: var(--wp-text, #111b21) !important;
+
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+.groupProfilePage .groupProfileActions button:hover:not(:disabled) {
+    background: var(--wp-primary-soft, #e7f7f1) !important;
+    border-color: #00a884 !important;
+    color: #00a884 !important;
+}
+
+[data-theme="dark"] .groupProfilePage .groupProfileActions button {
+    background: #202c33 !important;
+    color: #e9edef !important;
+    border-color: #2a3942 !important;
+}
+
+/* Participants */
+
+.groupProfilePage .groupMembersSection {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+}
+
+.groupProfilePage .groupMembersHeader {
+    padding: 16px 20px !important;
+}
+
+.groupProfilePage .groupMemberRow {
+    padding: 10px 20px !important;
+    min-height: 65px !important;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+    .groupProfilePage {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+}
+
+@keyframes groupProfileSlide {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
 }

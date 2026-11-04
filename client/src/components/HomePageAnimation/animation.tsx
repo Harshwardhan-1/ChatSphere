@@ -476,7 +476,7 @@ const InteractiveRobot = () => {
         {/* click heart */}
         {showHeart && (
           <text className="heart-pop" x="336" y="100">
-            ♥
+            
           </text>
         )}
       </svg>

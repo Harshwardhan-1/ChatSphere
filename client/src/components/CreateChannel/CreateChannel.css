@@ -1,11 +1,12 @@
 .create-channel-panel {
     position: absolute;
     inset: 0;
-    background: #ffffff;
+    background: var(--gc-surface, #ffffff);
+    color: var(--gc-text, #111b21);
     display: flex;
     flex-direction: column;
     animation: slide-in-left 0.25s ease-out;
-    z-index: 5;
+    z-index: 10;
 }
 
 @keyframes slide-in-left {
@@ -13,30 +14,54 @@
     to { transform: translateX(0); }
 }
 
+/* ---------- Header + Back button ---------- */
+
 .create-channel-header {
     display: flex;
     align-items: center;
-    gap: 28px;
-    padding: 20px;
-    background: #008069;
-    color: #ffffff;
+    gap: 12px;
+    height: 60px;
+    flex-shrink: 0;
+    padding: 0 16px;
+    background: var(--gc-surface-alt, #f7f8fa);
+    border-bottom: 1px solid var(--gc-border, #e9edef);
 }
 
 .create-channel-back {
-    background: none;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
     border: none;
-    color: #ffffff;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--gc-text, #111b21);
     font-size: 22px;
-    cursor: pointer;
     line-height: 1;
     padding: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.create-channel-back:hover {
+    background: var(--gc-primary-soft, rgba(0, 168, 132, 0.12));
+    color: var(--gc-primary, #00a884);
+}
+
+.create-channel-back:active {
+    transform: scale(0.94);
 }
 
 .create-channel-header h2 {
-    font-size: 19px;
-    font-weight: 500;
+    font-size: 17px;
+    font-weight: 600;
     margin: 0;
+    color: var(--gc-text, #111b21);
 }
+
+/* ---------- Body ---------- */
 
 .create-channel-body {
     position: relative;
@@ -46,7 +71,20 @@
     align-items: center;
     padding: 32px 24px;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(134, 150, 160, 0.4) transparent;
 }
+
+.create-channel-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.create-channel-body::-webkit-scrollbar-thumb {
+    background: rgba(134, 150, 160, 0.35);
+    border-radius: 10px;
+}
+
+/* ---------- Avatar ---------- */
 
 .create-channel-avatar {
     position: relative;
@@ -55,8 +93,9 @@
     border-radius: 50%;
     overflow: hidden;
     cursor: pointer;
-    background: #dfe5e7;
+    background: var(--gc-primary-soft, rgba(0, 168, 132, 0.12));
     margin-bottom: 8px;
+    flex-shrink: 0;
 }
 
 .create-channel-avatar img {
@@ -71,8 +110,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.35);
-    color: #fff;
+    background: rgba(0, 0, 0, 0.45);
+    color: #ffffff;
     font-size: 22px;
     opacity: 0;
     transition: opacity 0.15s ease;
@@ -84,9 +123,11 @@
 
 .create-channel-uploading {
     font-size: 12px;
-    color: #667781;
+    color: var(--gc-text-muted, #667781);
     margin: 0 0 12px;
 }
+
+/* ---------- Fields ---------- */
 
 .create-channel-field {
     width: 100%;
@@ -98,23 +139,37 @@
 .create-channel-field textarea,
 .create-channel-field select {
     width: 100%;
-    border: none;
-    border-bottom: 1px solid #d1d7db;
-    padding: 8px 2px;
-    font-size: 15px;
-    color: #111b21;
-    background: transparent;
+    background: var(--gc-surface-alt, #f7f8fa);
+    color: var(--gc-text, #111b21);
+    border: 1px solid var(--gc-border, #e9edef);
+    border-radius: 10px;
+    padding: 12px 14px;
     font-family: inherit;
+    font-size: 15px;
     resize: none;
     outline: none;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.create-channel-field input::placeholder,
+.create-channel-field textarea::placeholder {
+    color: var(--gc-text-muted, #667781);
+    opacity: 1;
 }
 
 .create-channel-field input:focus,
 .create-channel-field textarea:focus,
 .create-channel-field select:focus {
-    border-bottom: 2px solid #008069;
+    border-color: var(--gc-primary, #00a884);
+    box-shadow: 0 0 0 3px var(--gc-primary-soft, rgba(0, 168, 132, 0.12));
 }
+
+.create-channel-field select option {
+    background: var(--gc-pop-bg, #ffffff);
+    color: var(--gc-text, #111b21);
+}
+
+/* ---------- Create (tick) button ---------- */
 
 .create-channel-fab {
     position: absolute;
@@ -124,14 +179,18 @@
     height: 56px;
     border-radius: 50%;
     border: none;
-    background: #00a884;
+    background: var(--gc-primary, #00a884);
     color: #ffffff;
     font-size: 22px;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
-    transition: background 0.15s ease;
+    transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
 .create-channel-fab:hover {
-    background: #06cf9c;
+    background: #008f72;
+}
+
+.create-channel-fab:active {
+    transform: scale(0.95);
 }

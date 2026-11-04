@@ -1,238 +1,469 @@
-.group-call-overlay {
+/* ===== WhatsApp 1-on-1 Inspired Group Call Screen & Global Call Popups ===== */
+
+.wa-gc-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.92);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-}
-
-.group-call-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background: #0b141a;
+    z-index: 9999;
+    background: radial-gradient(circle at top, #182229 0%, #0b141a 70%);
+    color: #e9edef;
+    font-family: var(--wp-font, "Segoe UI", Helvetica, Arial, sans-serif);
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-.group-call-header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 10;
+.wa-gc-livekit-root {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.wa-gc-stage {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Top Bar */
+.wa-gc-topbar {
+    height: 64px;
+    padding: 0 22px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 20px;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 100%);
-    color: #e9edef;
-    font-size: 16px;
-    font-weight: 500;
-    pointer-events: none; 
+    background: rgba(17, 27, 33, 0.78);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
 }
 
-.group-call-header span {
-    letter-spacing: 0.2px;
+.wa-gc-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.group-call-close {
-    pointer-events: auto;
-    width: 36px;
-    height: 36px;
+.wa-gc-encrypted-dot {
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
-    border: none;
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
+    background: #00a884;
+    box-shadow: 0 0 10px #00a884;
+}
+
+.wa-gc-title {
+    margin: 0;
     font-size: 16px;
+    font-weight: 600;
+    color: #e9edef;
+}
+
+.wa-gc-subtitle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12.5px;
+    color: #8696a0;
+}
+
+.wa-gc-chat-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e9edef;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.wa-gc-chat-toggle-btn:hover,
+.wa-gc-chat-toggle-btn.active {
+    background: #00a884;
+    border-color: #00a884;
+    color: #ffffff;
+}
+
+/* Main Body & Grid */
+.wa-gc-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    padding: 18px;
+    gap: 16px;
+    overflow: hidden;
+}
+
+.wa-gc-grid {
+    flex: 1;
+    display: grid;
+    gap: 16px;
+    width: 100%;
+    height: 100%;
+    align-items: stretch;
+    justify-items: stretch;
+}
+
+.wa-gc-grid.count-1 {
+    grid-template-columns: minmax(0, 680px);
+    justify-content: center;
+}
+
+.wa-gc-grid.count-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.wa-gc-grid.count-3,
+.wa-gc-grid.count-4 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+.wa-gc-grid.count-5,
+.wa-gc-grid.count-6 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+/* Participant Tile */
+.wa-gc-tile {
+    position: relative;
+    background: linear-gradient(160deg, #1f2c34 0%, #111b21 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wa-gc-tile.is-speaking {
+    border-color: #00a884;
+    box-shadow: 0 0 0 2px rgba(0, 168, 132, 0.45), 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.wa-gc-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 1-on-1 Style Avatar Circle (Photo or First Letter) */
+.wa-gc-avatar-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.wa-gc-avatar-ring {
+    width: 108px;
+    height: 108px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    transition: background 0.15s ease;
+    overflow: hidden;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.4);
+    border: 3px solid rgba(255, 255, 255, 0.16);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.group-call-close:hover {
-    background: rgba(255, 255, 255, 0.22);
+.wa-gc-avatar-ring.speaking-pulse {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px rgba(0, 168, 132, 0.22), 0 8px 26px rgba(0, 0, 0, 0.4);
+    border-color: #00a884;
 }
 
-.group-call-error {
-    background: #202c33;
-    color: #e9edef;
-    padding: 28px 32px;
-    border-radius: 12px;
-    text-align: center;
-    max-width: 320px;
-}
-
-.group-call-error h3 {
-    margin: 0 0 8px;
-    color: #fff;
-}
-
-.group-call-error p {
-    margin: 0 0 16px;
-    color: #8696a0;
-    font-size: 14px;
-}
-
-.group-call-error button {
-    background: #00a884;
-    color: #fff;
-    border: none;
-    padding: 10px 24px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.group-livekit-room {
-    flex: 1;
+.wa-gc-avatar-img {
     width: 100%;
     height: 100%;
-
-    --lk-fg: #e9edef;
-    --lk-fg-secondary: #d1d7db;
-    --lk-bg: #0b141a;
-    --lk-bg-secondary: #202c33;
-    --lk-bg-tertiary: #2a3942;
-
-    --lk-accent-bg: #00a884;
-    --lk-accent-fg: #ffffff;
-
-    --lk-danger: #e64980;
-    --lk-danger-fg: #ffffff;
-
-    --lk-control-bg: rgba(32, 44, 51, 0.85);
-    --lk-control-fg: #ffffff;
+    object-fit: cover;
 }
 
-.group-livekit-room .lk-grid-layout,
-.group-livekit-room .lk-focus-layout {
-    padding: 70px 12px 110px; 
-    gap: 10px;
-    background: #0b141a;
+.wa-gc-avatar-letter {
+    font-size: 42px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+    user-select: none;
 }
 
-.group-livekit-room .lk-participant-tile {
-    background: #202c33;
-    border-radius: 14px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+.wa-gc-tile-big-name {
+    font-size: 17px;
+    font-weight: 600;
+    color: #e9edef;
 }
 
-.group-livekit-room .lk-participant-tile[data-lk-speaking="true"] {
-    box-shadow: 0 0 0 3px #00a884;
-}
-
-.group-livekit-room .lk-participant-placeholder {
-    background: #2a3942;
-}
-
-.group-livekit-room .lk-participant-placeholder svg {
+.wa-gc-tile-state {
+    font-size: 12.5px;
     color: #8696a0;
 }
 
-.group-livekit-room .lk-participant-metadata {
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(4px);
-    border-radius: 20px;
-    padding: 3px 10px;
-    left: 8px;
-    bottom: 8px;
-}
-
-.group-livekit-room .lk-participant-name {
-    color: #fff;
+/* Tile Bottom Overlay Pill */
+.wa-gc-tile-footer {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(11, 20, 26, 0.65);
+    backdrop-filter: blur(6px);
+    color: #ffffff;
     font-size: 13px;
     font-weight: 500;
 }
 
-.group-livekit-room [data-lk-audio-muted="true"] .lk-participant-metadata::before {
-    content: "🔇";
-    margin-right: 4px;
-    font-size: 11px;
-}
-
-.group-livekit-room .lk-control-bar {
-    position: absolute;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(32, 44, 51, 0.85);
-    backdrop-filter: blur(10px);
-    border: none;
-    border-radius: 40px;
-    padding: 10px 16px;
-    gap: 14px;
-    display: flex;
+.wa-gc-muted-badge {
+    color: #ea0038;
+    display: inline-flex;
     align-items: center;
 }
 
-.group-livekit-room .lk-button {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+/* In-Call Chat Drawer */
+.wa-gc-chat-drawer {
+    width: 340px;
+    max-width: 100%;
+    height: 100%;
+    background: #111b21;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.wa-gc-chat-drawer-header {
+    height: 52px;
+    padding: 0 16px;
+    background: #202c33;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wa-gc-chat-drawer-header h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.wa-gc-chat-close {
+    background: transparent;
     border: none;
+    color: #8696a0;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+}
+
+.wa-gc-chat-drawer-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Bottom Controls Pill (WhatsApp 1-on-1 Call Look) */
+.wa-gc-controls {
+    height: 84px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.15s ease;
+    gap: 18px;
+    padding: 0 24px;
+    background: rgba(17, 27, 33, 0.82);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
 }
 
-.group-livekit-room .lk-button:hover {
-    background: rgba(255, 255, 255, 0.18);
-}
-
-.group-livekit-room .lk-button[aria-pressed="true"],
-.group-livekit-room .lk-button[data-lk-enabled="false"] {
-    background: rgba(255, 255, 255, 0.25);
-}
-
-
-.group-livekit-room .lk-disconnect-button {
-    width: 56px;
-    height: 56px;
+.wa-gc-ctrl-btn {
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
-    background: #e64980;
-    color: #fff;
     border: none;
+    background: #2a3942;
+    color: #e9edef;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
-.group-livekit-room .lk-disconnect-button:hover {
-    background: #d63d73;
+.wa-gc-ctrl-btn:hover {
+    background: #374852;
+    transform: translateY(-2px);
 }
 
-.group-livekit-room .lk-audio-conference {
-    background: #0b141a;
-    padding: 70px 20px 110px;
+.wa-gc-ctrl-btn.is-off {
+    background: rgba(234, 0, 56, 0.22);
+    color: #ff5c7c;
 }
 
-.group-livekit-room .lk-participant-audio-tile {
-    background: #202c33;
-    border-radius: 16px;
+.wa-gc-ctrl-btn.is-active {
+    background: #00a884;
+    color: #ffffff;
+}
+
+.wa-gc-hangup-btn {
+    background: #ea0038 !important;
+    color: #ffffff !important;
+    width: 58px;
+    height: 52px;
+    border-radius: 999px;
+}
+
+.wa-gc-hangup-btn:hover {
+    background: #ff174e !important;
+}
+
+/* ===== Global Incoming / Calling 1-on-1 Style Card (Works on ANY Page) ===== */
+.wa-gc-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    background: rgba(11, 20, 26, 0.76);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 16px;
 }
 
-@media (max-width: 600px) {
-    .group-call-header {
-        padding: 14px 16px;
-        font-size: 15px;
-    }
+.wa-gc-call-card {
+    width: min(350px, 100%);
+    background: linear-gradient(165deg, #202c33 0%, #111b21 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 32px 24px 26px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: #e9edef;
+    box-shadow: 0 24px 56px rgba(0, 0, 0, 0.55);
+    animation: waGcCardIn 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 
-    .group-livekit-room .lk-control-bar {
-        bottom: 16px;
-        gap: 10px;
-        padding: 8px 12px;
+@keyframes waGcCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.95);
     }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 
-    .group-livekit-room .lk-button {
-        width: 44px;
-        height: 44px;
+.wa-gc-call-card-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 38px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 16px;
+    box-shadow: 0 0 0 8px rgba(0, 168, 132, 0.16);
+}
+
+.wa-gc-call-card-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.wa-gc-call-card-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.wa-gc-call-card-sub {
+    margin: 6px 0 24px;
+    font-size: 14px;
+    color: #8696a0;
+}
+
+.wa-gc-call-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    width: 100%;
+}
+
+.wa-gc-action-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 122px;
+    height: 46px;
+    padding: 0 20px;
+    border-radius: 999px;
+    border: none;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.wa-gc-action-pill:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+}
+
+.wa-gc-action-pill.accept {
+    background: #00a884;
+}
+
+.wa-gc-action-pill.reject {
+    background: #ea0038;
+}
+
+@media (max-width: 768px) {
+    .wa-gc-grid.count-2,
+    .wa-gc-grid.count-3,
+    .wa-gc-grid.count-4,
+    .wa-gc-grid.count-5,
+    .wa-gc-grid.count-6 {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+    }
+    .wa-gc-chat-drawer {
+        position: absolute;
+        inset: 64px 0 84px 0;
+        width: 100%;
+        z-index: 20;
+        border-radius: 0;
     }
 }

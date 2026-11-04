@@ -7,11 +7,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { userChatListPresence } from "../../services/user.presence.service";
 import ThemeToggle from "../../components/ThemeToggle/ThemeToggle";
 import { Bot, File as FileIcon, FileText, Phone, Video } from "lucide-react";
+// NAYA — avatar ka path backendUrl ke saath image ban sake
+import { env } from "../../configs/env.config";
 
+// NAYA — avatar / description optional: backend ke User me ye fields hain, alluser se aaye toh list me image dikhegi
 interface User {
   _id: string;
   name: string;
   email: string;
+  avatar?: string;
+  description?: string;
 }
 
 interface lastMessage {
@@ -59,6 +64,12 @@ interface Props {
 }
 
 type PreviewKind = "text" | "file" | "pdf" | "voice" | "video";
+
+// NAYA — avatar path: full URL ho toh waisa hi, warna backendUrl laga do
+const avatarUrl = (path?: string) => {
+  if (!path) return "";
+  return /^(https?:|data:|blob:)/i.test(path) ? path : `${env.backendUrl}${path}`;
+};
 
 // Chat list me preview: text ho toh message (ek line me), file ho toh "File" + icon,
 // pdf ho toh "PDF" + icon, call ho toh voice/video icon + call ka text.
@@ -216,11 +227,23 @@ const ChatListPage = ({ selectedUser, setSelectedUser }: Props) => {
   const [filter, setFilter] = useState<"all" | "favourites">("all");
   const handleAllFavourites = (ids: string[]) => setFavouriteIds(ids);
 
+  // NAYA — kisi ne profile pic badli toh list me turant naya avatar (userId -> avatar path; "" matlab hata di)
+  const [avatarOverrides, setAvatarOverrides] = useState<Record<string, string>>({});
+  // NAYA — description bhi live badle toh yahan rakhte hain (userId -> description)
+  const [descriptionOverrides, setDescriptionOverrides] = useState<Record<string, string>>({});
+  // NAYA — image load na ho paye toh wahi purane initials dikhao
+  const [failedAvatars, setFailedAvatars] = useState<Record<string, boolean>>({});
+
   const getInitials = (name: string): string => {
     return name.split(" ").map((word) => word[0]).slice(0, 2).join("").toUpperCase();
   };
   const handleClick = async (all: User) => {
-    setSelectedUser(all);
+    // NAYA — list ka data purana ho sakta ha; jo avatar / description live badle hain wo bhi chat ke saath bhejo
+    const avatar = avatarOverrides[all._id] ?? all.avatar;
+    const description = descriptionOverrides[all._id] ?? all.description;
+    setSelectedUser(
+      avatar === all.avatar && description === all.description ? all : { ...all, avatar, description }
+    );
   };
   const [lastMessages, setLastMessage] = useState<lastMessage[]>([]);
 
@@ -323,6 +346,30 @@ const ChatListPage = ({ selectedUser, setSelectedUser }: Props) => {
     });
   };
 
+  // NAYA — profile pic badli: list ka avatar update + agar wahi chat khuli ha toh selectedUser bhi
+  // (taaki contact info panel dobara kholne par purani photo na dikhe)
+  const handleProfilePicChanged = (payload: { data?: { senderId: string; avatar: string } }) => {
+    const changed = payload?.data;
+    if (!changed?.senderId) return;
+    setAvatarOverrides((prev) => ({ ...prev, [changed.senderId]: changed.avatar }));
+    setSelectedUser((prev) =>
+      prev && prev._id === changed.senderId && prev.avatar !== changed.avatar
+        ? { ...prev, avatar: changed.avatar }
+        : prev
+    );
+  };
+
+  // NAYA — description badli: wahi chat khuli ha toh selectedUser me update
+  const handleProfileDescriptionChanged = (changed: { senderId: string; description: string }) => {
+    if (!changed?.senderId) return;
+    setDescriptionOverrides((prev) => ({ ...prev, [changed.senderId]: changed.description }));
+    setSelectedUser((prev) =>
+      prev && prev._id === changed.senderId && prev.description !== changed.description
+        ? { ...prev, description: changed.description }
+        : prev
+    );
+  };
+
   //new start
   useEffect(() => {
     const userId = userData?.loginUserId;
@@ -349,6 +396,8 @@ const ChatListPage = ({ selectedUser, setSelectedUser }: Props) => {
     socket.on("unseen_count_zero", handleUnseenCountZero);
     socket.on("increase_unseen_count", handleIncreaseUnseenCount);
     socket.on("all_favourites", handleAllFavourites);
+    socket.on("profile_pic_changed", handleProfilePicChanged);
+    socket.on("profile_description_changed", handleProfileDescriptionChanged);
 
     return () => {
       socket.off("connect", initSocketData);
@@ -360,6 +409,8 @@ const ChatListPage = ({ selectedUser, setSelectedUser }: Props) => {
       socket.off("unseen_count_zero", handleUnseenCountZero);
       socket.off("increase_unseen_count", handleIncreaseUnseenCount);
       socket.off("all_favourites", handleAllFavourites);
+      socket.off("profile_pic_changed", handleProfilePicChanged);
+      socket.off("profile_description_changed", handleProfileDescriptionChanged);
     };
   }, [userData?.loginUserId]);
   //new ends
@@ -547,6 +598,10 @@ const ChatListPage = ({ selectedUser, setSelectedUser }: Props) => {
                 const isMine = last?.senderId === myId;
                 const isActive = selectedUser?._id === all._id;
 
+                // NAYA — avatar image ho toh image, warna purane initials
+                const avatarSrc = avatarUrl(avatarOverrides[all._id] ?? all.avatar);
+                const showAvatarImg = !!avatarSrc && !failedAvatars[`${all._id}|${avatarSrc}`];
+
                 return (
                   <motion.div
                     key={all._id}
@@ -563,7 +618,18 @@ const ChatListPage = ({ selectedUser, setSelectedUser }: Props) => {
                       className="chatPage__avatar"
                       style={{ backgroundColor: colors[index % colors.length] }}
                     >
-                      {getInitials(all.name)}
+                      {showAvatarImg ? (
+                        <img
+                          src={avatarSrc}
+                          alt=""
+                          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+                          onError={() =>
+                            setFailedAvatars((prev) => ({ ...prev, [`${all._id}|${avatarSrc}`]: true }))
+                          }
+                        />
+                      ) : (
+                        getInitials(all.name)
+                      )}
                       {!isSelf && <span className="chatPage__onlineDot"></span>}
                     </div>
 

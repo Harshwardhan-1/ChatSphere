@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
 import "./stories.css";
 import {
@@ -18,9 +17,12 @@ import {
   FiEye,
   FiHeart,
   FiSmile,
+  FiSun,
+  FiMoon,
 } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
 import { env } from "../../configs/env.config";
+import axiosInstance from "../../services/axiosInstance";
 import { useStoriesTalk } from "../../hooks/Use.storiestalk";
 import type { Story, StoryReply } from "../../hooks/Use.storiestalk";
 
@@ -175,6 +177,28 @@ export function Stories() {
     toggleLikeReply,
     fetchReplies,
   } = useStoriesTalk();
+
+  // Theme state synced with document & localStorage
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    const attrTheme = document.documentElement.getAttribute("data-theme");
+    if (attrTheme === "dark" || attrTheme === "light") return attrTheme;
+    const saved = localStorage.getItem("theme") || localStorage.getItem("wp-theme");
+    return saved === "dark" ? "dark" : "light";
+  });
+
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      localStorage.setItem("theme", next);
+      localStorage.setItem("wp-theme", next);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   const [view, setView] = useState<"list" | "viewer">("list");
   const [activeSenderId, setActiveSenderId] = useState<string | null>(null);
@@ -332,7 +356,8 @@ export function Stories() {
     try {
       const formData = new FormData();
       formData.append("story", file);
-      const res = await axios.post(`${env.backendUrl}/api/v1/uploadStory`, formData, { withCredentials: true });
+      // FIXED: axiosInstance already has /api/v1 in baseURL, so only "/uploadStory" is needed
+      const res = await axiosInstance.post(`/uploadStory`, formData, { withCredentials: true });
       if (res.data.success) {
         const fileData = res.data.data;
         createStory({
@@ -418,16 +443,21 @@ export function Stories() {
   return (
     <>
       {view === "list" && (
-        <div className="status-page">
+        <div className="status-page" data-theme={theme}>
           <div className="status-header">
             <h2>Status</h2>
             <div className="status-header-icons">
+              <button
+                className="theme-toggle-btn"
+                onClick={toggleTheme}
+                title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? <FiSun size={20} /> : <FiMoon size={20} />}
+              </button>
               <button onClick={handleAddStoryClick} title="Add status">
                 <FiPlus size={20} />
               </button>
-              <button title="More options">
-                <FiMoreVertical size={20} />
-              </button>
+              
             </div>
           </div>
 
@@ -495,7 +525,7 @@ export function Stories() {
       )}
 
       {view === "viewer" && currentStory && activeGroup && (
-        <div className="story-viewer-overlay">
+        <div className="story-viewer-overlay" data-theme={theme}>
           {currentStory.storyType === "image" && (
             <div
               className="story-blurred-bg"
@@ -526,6 +556,13 @@ export function Stories() {
                 <span className="story-header-name">{activeGroup.name}</span>
                 <span className="story-header-time">{formatTime(currentStory.createdAt)}</span>
               </div>
+              <button
+                className="story-icon-btn"
+                onClick={toggleTheme}
+                title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? <FiSun size={18} /> : <FiMoon size={18} />}
+              </button>
               <button className="story-icon-btn" onClick={() => setPaused((p) => !p)}>
                 {paused ? <FiPlay size={18} /> : <FiPause size={18} />}
               </button>

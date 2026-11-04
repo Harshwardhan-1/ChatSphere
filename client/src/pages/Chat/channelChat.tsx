@@ -6,9 +6,28 @@ import { env } from "../../configs/env.config";
 import { ChannelHook } from "../../hooks/use.channel.hook";
 import { userChatListPresence } from "../../services/user.presence.service";
 import { ChannelProfile } from "../../components/ChannelsProfile/ChannelsProfile";
-import EmojiPicker from "emoji-picker-react";
+import EmojiPicker, { Theme as EmojiTheme } from "emoji-picker-react";
 import { renderMessageWithLinks } from "../../utils/linkify/linkify";
 import axiosInstance from "../../services/axiosInstance";
+import { showApiError } from "../../utils/showApiError";
+import { CreatePollModal } from "../../components/Poll/CreatePollMode";
+import {
+    Sun,
+    Moon,
+    Paperclip,
+    BarChart2,
+    Send,
+    Smile,
+    ChevronDown,
+    X,
+    Plus,
+    Pencil,
+    Copy,
+    EyeOff,
+    Trash2,
+    FileText,
+    Check,
+} from "lucide-react";
 import "./ChannelChat.css";
 
 
@@ -24,25 +43,15 @@ interface ChannelListItem {
 
 const CATEGORIES = ["sports", "entertainment", "technology", "news", "education", "business", "other"];
 
+// windows ka backslash path (uploads\abc.png) bhi sahi URL bana deta hai
 function resolveChannelPic(profilePic?: string) {
-    return profilePic ? `${env.backendUrl}${profilePic}` : "/default.webp";
+    if (!profilePic) return "/default.webp";
+    if (/^(https?:|data:)/i.test(profilePic)) return profilePic;
+
+    const clean = profilePic.replace(/\\/g, "/");
+    const path = clean.startsWith("/") ? clean : `/${clean}`;
+    return `${env.backendUrl}${path}`;
 }
-
-// function getFollowerCount(ch: ChannelListItem): number {
-//     return typeof ch.followersCount === "number" ? ch.followersCount : (ch.followers?.length ?? 0);
-// }
-
-// function formatFollowers(count: number): string {
-//     if (count >= 1_000_000) {
-//         const v = count / 1_000_000;
-//         return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)}M followers`;
-//     }
-//     if (count >= 1_000) {
-//         const v = count / 1_000;
-//         return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)}k followers`;
-//     }
-//     return `${count} follower${count === 1 ? "" : "s"}`;
-// }
 
 // reaction counts ko WhatsApp jaisa short format dene ke liye (23.2K, 1.8K, etc.)
 function formatReactionCount(count: number): string {
@@ -83,9 +92,26 @@ const SearchIcon = () => (
 );
 
 export function ChannelChat() {
-    
+
     const location = useLocation();
     const senderId = location.state?.senderId;
+
+    // GroupChat jaisa hi theme (same localStorage key, same data-theme)
+    const [theme, setTheme] = useState<"light" | "dark">(() => {
+        const saved = localStorage.getItem("wp-theme");
+        if (saved === "dark" || saved === "light") return saved;
+        return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    });
+
+    useEffect(() => {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("wp-theme", theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prev => (prev === "light" ? "dark" : "light"));
+    };
+
     const [activeOption, setActiveOption] = useState<string | null>(null);
     const [myChannels, setMyChannels] = useState<ChannelListItem[]>([]);
     const [randomChannels, setRandomChannels] = useState<ChannelListItem[]>([]);
@@ -97,16 +123,30 @@ export function ChannelChat() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedChannel, setSelectedChannel] = useState<ChannelListItem | null>(null);
     const [messageText, setMessageText] = useState("");
-    const [file,setFile]=useState<File>();
     const [channelLastMessages, setChannelLastMessages] = useState<any[]>([]);
     const [channelPendingCounts, setChannelPendingCounts] = useState<{id:string; count:number}[]>([]);
     // emoji reaction ke liye states - GroupChat ke reactionMessage/showReactionDetail jaisa hi
     const [reactionMessage, setReactionMessage] = useState<string | null>(null);
     const [showReactionDetail, setShowReactionDetail] = useState<string | null>(null);
+    const [openMsgMenuId, setOpenMsgMenuId] = useState<string | null>(null);
     const reactionRef = useRef<HTMLDivElement | null>(null);
     const reactionDetailRef = useRef<HTMLDivElement | null>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
     // channel info (profile) sliding panel ke liye state
     const [showChannelProfile, setShowChannelProfile] = useState<boolean>(false);
+
+    // Channel delete hone par real-time lock/blur state
+    const [isChannelDeleted, setIsChannelDeleted] = useState<boolean>(false);
+    const selectedChannelRef = useRef<ChannelListItem | null>(null);
+    selectedChannelRef.current = selectedChannel;
+
+    // POLL ke states
+    const [showCreatePoll, setShowCreatePoll] = useState<boolean>(false);
+    // abhi-abhi bane poll messages (jo hook ke msg list me live nahi aate)
+    const [livePollMsgs, setLivePollMsgs] = useState<any[]>([]);
+    // pollId -> poll document (options + votes)
+    const [pollsById, setPollsById] = useState<Record<string, any>>({});
+    const requestedPollsRef = useRef<Set<string>>(new Set());
 
     const handleCreated = () => {
         setActiveOption(null);
@@ -130,89 +170,80 @@ export function ChannelChat() {
         socket.emit("all_user_channel", senderId);
     };
 
-  const [canSend,setCanSend]=useState<boolean>(false);
+    const [canSend,setCanSend]=useState<boolean>(false);
 
-   const handleCanSend=(msg:string)=>{
-    if(msg==="canSend"){
-        setCanSend(true);
-    }else{
-        setCanSend(false);
+    const handleCanSend=(msg:string)=>{
+        if(msg==="canSend"){
+            setCanSend(true);
+        }else{
+            setCanSend(false);
+        }
+    };
+
+
+    // ek hi jagah se channel ka name / pic / description sab lists + header me update hota hai
+    // (socket event aaye ya ChannelProfile se callback aaye - dono ke liye same function)
+    const applyChannelPatch = (channelId: string, patch: Partial<ChannelListItem>) => {
+        const same = (c: ChannelListItem) => c._id.toString() === channelId.toString();
+        const update = (list: ChannelListItem[]) => list.map(c => (same(c) ? { ...c, ...patch } : c));
+
+        setMyChannels(update);
+        setRandomChannels(update);
+        setExploreChannels(update);
+        setSelectedChannel(prev => (prev && same(prev) ? { ...prev, ...patch } : prev));
+    };
+
+    const handleProfilePicUpdated = (d: { channelId: string; message: string }) =>
+        applyChannelPatch(d.channelId, { profilePic: d.message });
+
+    const handleNameUpdated = (d: { channelId: string; name: string }) =>
+        applyChannelPatch(d.channelId, { name: d.name });
+
+    const handleDescriptionUpdated = (d: { channelId: string; description: string }) =>
+        applyChannelPatch(d.channelId, { description: d.description });
+
+    // Real-time channel delete handler
+    const handleChannelDeletedRealtime = (data: { _id: string; message: string }) => {
+        if (!data?._id) return;
+        const deletedId = data._id.toString();
+
+        // Sabhi chat lists / discover / explore lists se turant gayab karo
+        setMyChannels(prev => prev.filter(c => c._id.toString() !== deletedId));
+        setRandomChannels(prev => prev.filter(c => c._id.toString() !== deletedId));
+        setExploreChannels(prev => prev.filter(c => c._id.toString() !== deletedId));
+        setChannelLastMessages(prev => prev.filter(c => c.channelId?.toString() !== deletedId));
+        setChannelPendingCounts(prev => prev.filter(p => p.id?.toString() !== deletedId));
+
+        // Agar abhi wahi channel khula hua hai toh profile panel, reaction picker aur menu band karo, input blur/disable karo
+        if (selectedChannelRef.current?._id?.toString() === deletedId) {
+            setShowChannelProfile(false);
+            setShowCreatePoll(false);
+            setReactionMessage(null);
+            setOpenMsgMenuId(null);
+            setEditingMsgId(null);
+            setCanSend(false);
+            setIsChannelDeleted(true);
+        }
+    };
+
+
+    const [showFollwingButton,setShowFollowingButton]=useState<boolean>(false);
+    const [isCreator,setIsCreator]=useState<boolean>(false);
+    const handleFollowing=(data:{channelId:string,senderId:string,msg:string,channelCreator:string})=>{
+        if(data.channelId.toString()!==selectedChannel?._id)return;
+        if(data.msg==="Not Following"){
+            //toh Follow dikhana ha 
+            setShowFollowingButton(true);
+        }else{
+            //un follow button dikha ah matlab
+            setShowFollowingButton(false);
+        }
+        if(data.channelCreator==="yes"){
+            setIsCreator(true);
+        }else{
+            setIsCreator(false);
+        }
     }
-};
-
-
-
-const handleProfilePicUpdated = (data: {
-    channelId: string;
-    message: string;
-}) => {
-    setMyChannels(prev =>
-        prev.map(channel=>channel._id.toString() === data.channelId.toString()
-        ?{ ...channel, profilePic: data.message }:channel
-        )
-    );
-
-    setRandomChannels(prev=>prev.map(channel =>channel._id.toString() === data.channelId.toString()
-                ? { ...channel, profilePic: data.message }:channel
-        )
-    );
-
-    setExploreChannels(prev =>
-        prev.map(channel=>channel._id.toString() === data.channelId.toString()
-                ? { ...channel, profilePic: data.message }: channel
-        )
-    );
-
-    setSelectedChannel(prev =>
-        prev && prev._id.toString() === data.channelId.toString()?
-        {...prev, profilePic: data.message}:prev
-    );
-};
-
-
-
-const handleNameUpdated=(data:{channelId:string,name:string})=>{
-    setMyChannels(prev =>
-        prev.map(channel =>channel._id.toString()===data.channelId.toString()
-                ? {...channel,name:data.name}: channel
-        )
-    );
-    setRandomChannels(prev =>
-        prev.map(channel =>channel._id.toString()===data.channelId.toString()
-                ? {...channel,name:data.name}:channel
-        )
-    );
-    setExploreChannels(prev =>
-        prev.map(channel =>
-            channel._id.toString()===data.channelId.toString()
-                ? {...channel,name:data.name}:channel
-        )
-    );
-    setSelectedChannel(prev =>
-        prev && prev._id.toString()===data.channelId.toString()
-            ? {...prev,name:data.name}:prev
-    );
-};
-
-
-
-  const [showFollwingButton,setShowFollowingButton]=useState<boolean>(false);
-  const [isCreator,setIsCreator]=useState<boolean>(false);
-  const handleFollowing=(data:{channelId:string,senderId:string,msg:string,channelCreator:string})=>{
-    if(data.channelId.toString()!==selectedChannel?._id)return;
-    if(data.msg==="Not Following"){
-        //toh Follow dikhana ha 
-        setShowFollowingButton(true);
-    }else{
-        //un follow button dikha ah matlab
-        setShowFollowingButton(false);
-    }
-    if(data.channelCreator==="yes"){
-        setIsCreator(true);
-    }else{
-        setIsCreator(false);
-    }
-}
 
     useEffect(()=>{
         socket.emit("random_channels", senderId);
@@ -227,6 +258,8 @@ const handleNameUpdated=(data:{channelId:string,name:string})=>{
         socket.on("canSendMessage",handleCanSend);
         socket.on("channel_pic_updated",handleProfilePicUpdated);
         socket.on("channel_name_updated",handleNameUpdated);
+        socket.on("channel_description_changed",handleDescriptionUpdated);
+        socket.on("channel_deleted", handleChannelDeletedRealtime);
 
 
         return () => {
@@ -238,21 +271,23 @@ const handleNameUpdated=(data:{channelId:string,name:string})=>{
             socket.off("canSendMessage",handleCanSend);
             socket.off("channel_pic_updated",handleProfilePicUpdated);
             socket.off("channel_name_updated",handleNameUpdated);
+            socket.off("channel_description_changed",handleDescriptionUpdated);
+            socket.off("channel_deleted", handleChannelDeletedRealtime);
         };
     }, []);
 
-useEffect(() => {
-    if (!selectedChannel?._id || !senderId) return;
-    socket.emit("active_channel_user",{channelId:selectedChannel._id,senderId});
-  
-    socket.emit("_isFollowing",({channelId:selectedChannel._id,senderId}));
+    useEffect(() => {
+        if (!selectedChannel?._id || !senderId || isChannelDeleted) return;
+        socket.emit("active_channel_user",{channelId:selectedChannel._id,senderId});
+      
+        socket.emit("_isFollowing",({channelId:selectedChannel._id,senderId}));
 
-    socket.on("channel_following",handleFollowing);
-    return()=>{
-        socket.emit("not_active_channel_user",{channelId:selectedChannel._id,senderId});
-        socket.off("channel_following",handleFollowing);
-    };
-}, [selectedChannel?._id, senderId]);
+        socket.on("channel_following",handleFollowing);
+        return()=>{
+            socket.emit("not_active_channel_user",{channelId:selectedChannel._id,senderId});
+            socket.off("channel_following",handleFollowing);
+        };
+    }, [selectedChannel?._id, senderId, isChannelDeleted]);
 
     // naya channel select hote hi profile panel band ho jaye
     useEffect(() => {
@@ -268,6 +303,8 @@ useEffect(() => {
         };
 
         const handleChatListUpdate = (data: any) => {
+            // backend kabhi undefined bhej de toh crash na ho
+            if (!data) return;
             setChannelLastMessages(prev => {
                 const index = prev.findIndex(c => c.channelId === data.channelId);
                 if (index !== -1) {
@@ -302,27 +339,78 @@ useEffect(() => {
         };
     }, [senderId]);
 
-    // emoji picker ke bahar click hone par band ho jaye
+    // emoji picker / reaction popup / message menu ke bahar click hone par band (GroupChat jaisa)
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (reactionRef.current && !reactionRef.current.contains(event.target as Node)) {
+            const target = event.target as HTMLElement;
+
+            if (
+                reactionRef.current &&
+                !reactionRef.current.contains(target) &&
+                !target.closest(".wa-rx-btn") &&
+                !target.closest(".gc-add-reaction-pill")
+            ) {
                 setReactionMessage(null);
+            }
+
+            if (
+                reactionDetailRef.current &&
+                !reactionDetailRef.current.contains(target) &&
+                !target.closest(".gc-reaction-badge")
+            ) {
+                setShowReactionDetail(null);
+            }
+
+            if (!target.closest(".wa-menu")) {
+                setOpenMsgMenuId(null);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // reaction detail popup ke bahar click hone par band ho jaye
+    // POLL ke live socket events (naya poll aaya / vote update / poll details / message delete)
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (reactionDetailRef.current && !reactionDetailRef.current.contains(event.target as Node)) {
-                setShowReactionDetail(null);
-            }
+        const channelId = selectedChannel?._id;
+        if (!channelId) return;
+
+        setLivePollMsgs([]);
+        requestedPollsRef.current = new Set();
+
+        const onPollMessage = (payload: { msg: any; poll: any }) => {
+            if (!payload?.msg || !payload?.poll) return;
+            if (payload.msg.channelId?.toString() !== channelId.toString()) return;
+            setPollsById(prev => ({ ...prev, [payload.poll._id]: payload.poll }));
+            setLivePollMsgs(prev =>
+                prev.some(m => m._id === payload.msg._id) ? prev : [...prev, payload.msg]
+            );
         };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+
+        // vote update / poll details dono me poll document aata hai
+        const onPollDoc = (poll: any) => {
+            if (!poll?._id || !Array.isArray(poll.options)) return;
+            setPollsById(prev => ({ ...prev, [poll._id]: poll }));
+        };
+
+        const onDeleted = (d: { channelId: string; msgId: string }) => {
+            if (!d || d.channelId?.toString() !== channelId.toString()) return;
+            setLivePollMsgs(prev => prev.filter(m => m._id !== d.msgId));
+        };
+
+        socket.on("channel_poll_message", onPollMessage);
+        socket.on("channel_poll_updated", onPollDoc);
+        socket.on("channel_pole_updated", onPollDoc); // title payload me options nahi hote, wo ignore ho jata hai
+        socket.on("channel_poll_details", onPollDoc);
+        socket.on("deleted_channel_msg", onDeleted);
+
+        return () => {
+            socket.off("channel_poll_message", onPollMessage);
+            socket.off("channel_poll_updated", onPollDoc);
+            socket.off("channel_pole_updated", onPollDoc);
+            socket.off("channel_poll_details", onPollDoc);
+            socket.off("deleted_channel_msg", onDeleted);
+        };
+    }, [selectedChannel?._id]);
 
     
     const handleCreate = () => setActiveOption("create channel");
@@ -359,6 +447,7 @@ useEffect(() => {
     };
 
     const handleOpenChannel = (ch: ChannelListItem) => {
+        setIsChannelDeleted(false);
         setSelectedChannel(ch);
         setMessageText("");
         setCanSend(false); 
@@ -383,8 +472,9 @@ useEffect(() => {
 
 
     const handleFollowButton=()=>{
-    socket.emit("update_channel_followers_list",({channelId:selectedChannel?._id,senderId}));
-}
+        if (isChannelDeleted) return;
+        socket.emit("update_channel_followers_list",({channelId:selectedChannel?._id,senderId}));
+    }
 
     const renderMyChannelRow = (ch: ChannelListItem) => {
         const last = channelLastMessages.find(c => c.channelId === ch._id);
@@ -399,17 +489,14 @@ useEffect(() => {
                     <img src={resolveChannelPic(ch.profilePic)} alt={ch.name} />
                 </div>
                 <div className="channel-row-info">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div className="channel-row-top">
                         <span className="channel-row-name">{ch.name}</span>
-                        <span style={{ fontSize: "12px", color: "#667781" }}>
+                        <span className="channel-row-time">
                             {last ? userChatListPresence(last.updatedAt) : ""}
                         </span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span
-                            className="channel-row-last-msg"
-                            style={{ fontSize: "13px", color: "#667781", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "180px" }}
-                        >
+                    <div className="channel-row-bottom">
+                        <span className="channel-row-last-msg">
                             {getChannelDisplayMessage(last)}
                         </span>
                         {pending && pending.count > 0 && (
@@ -464,7 +551,6 @@ const renderFindRow = (ch: ChannelListItem) => (
         </div>
         <div className="find-row-info">
             <span className="find-row-name">{ch.name}</span>
-            {/* <span className="find-row-count">{formatFollowers(getFollowerCount(ch))}</span> */}
         </div>
         <button className="find-follow-btn" onClick={handleFollowButton}
             type="button">Follow</button>
@@ -473,8 +559,32 @@ const renderFindRow = (ch: ChannelListItem) => (
 
 const {msg,editMsg,deleteForMe,deleteForEveryone,sendFileMsg,sendMessage,sendReaction}=ChannelHook(selectedChannel?._id,senderId);
 
+// hook ke messages + live bane poll messages (duplicate hatake)
+const baseMsgs: any[] = (msg as any[]) || [];
+const displayMsgs: any[] = [
+    ...baseMsgs,
+    ...livePollMsgs.filter(p => !baseMsgs.some((m: any) => m._id === p._id)),
+];
+
+// jin poll messages ka data abhi nahi aaya unka poll document server se mangwao
+useEffect(() => {
+    if (!selectedChannel?._id || isChannelDeleted) return;
+    baseMsgs.forEach((m: any) => {
+        if (m.messageType !== "poll") return;
+        const pollId = m.message;
+        if (!pollId || pollsById[pollId] || requestedPollsRef.current.has(pollId)) return;
+        requestedPollsRef.current.add(pollId);
+        socket.emit("get_channel_poll", { channelId: selectedChannel._id, pollId });
+    });
+}, [msg, selectedChannel?._id, pollsById, isChannelDeleted]);
+
+const removeLivePoll = (msgId: string) => {
+    setLivePollMsgs(prev => prev.filter(m => m._id !== msgId));
+};
+
 const handleSubmit=async(e:React.FormEvent<HTMLFormElement>)=>{
     e.preventDefault();
+    if(isChannelDeleted || !canSend) return;
     if(messageText.trim().length===0){
         alert("msg field cannot be empty");
         return;
@@ -487,8 +597,10 @@ const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
 const [editText, setEditText] = useState<string>("");
 
 const handleEditClick = (item: any) => {
+    if (isChannelDeleted) return;
     setEditingMsgId(item._id);
     setEditText(item.message);
+    setOpenMsgMenuId(null);
 };
 
 const cancelEdit = () => {
@@ -497,27 +609,118 @@ const cancelEdit = () => {
 };
 
 const saveEdit = (msgId: string) => {
+    if (isChannelDeleted) return;
     if (editText.trim().length === 0) return;
     editMsg({channelId:selectedChannel!._id,senderId,msgId,message:editText});
     setEditingMsgId(null);
     setEditText("");
 };
 
-const handleFileSubmit=async(e:React.FormEvent<HTMLFormElement>)=>{
-    e.preventDefault();
-    if(!file){
-        alert("file not found");
-        return;
+// file choose hote hi seedha upload + send (alag se "Send File" button nahi)
+const uploadAndSendFile = async (picked: File) => {
+    if (!selectedChannel || !canSend || isChannelDeleted) return;
+    try {
+        const formData = new FormData();
+        formData.append("file", picked);
+        const res = await axiosInstance.post("/upload", formData);
+        if (res.data.success) {
+            const data = res.data.data;
+            sendFileMsg({
+                channelId: selectedChannel._id,
+                senderId,
+                message: data.path,
+                messageType: "file",
+                mimetype: data.mimetype,
+                orignalname: data.orignalname ?? data.originalname ?? data.name ?? picked.name,
+                sizeInKb: data.sizeInKb,
+                sizeInMb: data.sizeInMb,
+            });
+        }
+    } catch (err) {
+        showApiError(err);
+        console.log(err);
     }
-    const formData=new FormData();
-    formData.append("file",file);    
-    const res=await axiosInstance.post("/upload",formData);
-    if(res.data.success){
-        const data=res.data.data;
-        sendFileMsg({channelId:selectedChannel!._id,senderId,message:data.path,messageType:"file",mimetype:data.mimetype,
-            orignalname:data.orignalname,sizeInKb:data.sizeInKb,sizeInMb:data.sizeInMb})
-    }
-}
+};
+
+const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = e.target.files?.[0];
+    e.target.value = ""; // taaki same file dobara bhi choose ho sake
+    if (picked) uploadAndSendFile(picked);
+};
+
+// POLL create - CreatePollModal se data aata hai (GroupChat jaisa hi)
+const handleCreatePoll = (data: {
+    title: string;
+    selectOptions: boolean;
+    polldata: { msg: string; peoplesId: string[] }[];
+}) => {
+    if (!selectedChannel?._id || isChannelDeleted) return;
+    socket.emit("create_channel_poll", {
+        channelId: selectedChannel._id,
+        senderId,
+        title: data.title,
+        canSelectMultiple: data.selectOptions,
+        pollData: data.polldata,
+    });
+};
+
+// POLL vote - single choice ya multiple choice poll ke hisaab se alag event
+const handlePollVote = (item: any, poll: any, optionId: string) => {
+    if (!selectedChannel?._id || isChannelDeleted) return;
+    socket.emit(
+        poll.canSelectMultiple ? "channel_poll_toggle_multiple" : "channel_poll_toggle",
+        { channelId: selectedChannel._id, senderId, msgId: item._id, pollId: optionId }
+    );
+};
+
+const renderPollBody = (item: any) => {
+    const poll = pollsById[item.message];
+    if (!poll) return <div className="channel-poll-hint">Loading poll…</div>;
+
+    const multi = !!poll.canSelectMultiple;
+    const options: any[] = poll.options || [];
+
+    const voterSet = new Set<string>();
+    options.forEach((o: any) => (o.peoplesId || []).forEach((id: any) => voterSet.add(id.toString())));
+    const totalVoters = voterSet.size;
+
+    return (
+        <div className="channel-poll">
+            <div className="channel-poll-title">{poll.title}</div>
+            <div className="channel-poll-hint">{multi ? "Select one or more" : "Select one"}</div>
+
+            {options.map((o: any) => {
+                const count = (o.peoplesId || []).length;
+                const voted = (o.peoplesId || []).some((id: any) => id.toString() === senderId?.toString());
+                const pct = totalVoters ? Math.round((count / totalVoters) * 100) : 0;
+                return (
+                    <button
+                        key={o._id}
+                        type="button"
+                        disabled={isChannelDeleted}
+                        className={`channel-poll-option${voted ? " channel-poll-option--voted" : ""}`}
+                        onClick={(e) => { e.stopPropagation(); handlePollVote(item, poll, o._id); }}
+                    >
+                        <div className="channel-poll-option-row">
+                            <span className={`channel-poll-check${multi ? " channel-poll-check--multi" : ""}`}>
+                                {voted && <Check size={12} />}
+                            </span>
+                            <span className="channel-poll-option-text">{o.msg}</span>
+                            <span className="channel-poll-option-count">{count}</span>
+                        </div>
+                        <div className="channel-poll-bar">
+                            <div className="channel-poll-bar-fill" style={{ width: `${pct}%` }} />
+                        </div>
+                    </button>
+                );
+            })}
+
+            <div className="channel-poll-footer">
+                {totalVoters} vote{totalVoters !== 1 ? "s" : ""}
+            </div>
+        </div>
+    );
+};
 
 // reactions ko emoji ke hisaab se group karta hai - GroupChat ka groupReactions helper, hubahu
 const groupReactions = (reactions: { userId: string; emoji: string }[] = []) => {
@@ -529,18 +732,19 @@ const groupReactions = (reactions: { userId: string; emoji: string }[] = []) => 
 };
 
 const handleEmojiReaction=(msgId:string,emoji:string)=>{
-    if(!selectedChannel) return;
+    if(!selectedChannel || isChannelDeleted) return;
     sendReaction({channelId:selectedChannel._id,msgId,senderId,emoji});
 };
 
 // apna hi reaction hai toh use dobara bhej ke toggle-off karna (backend same-emoji pe hata deta hai)
 const handleRemoveReaction = (msgId: string, currentEmoji: string) => {
+    if (isChannelDeleted) return;
     handleEmojiReaction(msgId, currentEmoji);
     setShowReactionDetail(null);
 };
 
     return (
-        <div className="channel-chat-page">
+        <div className="channel-chat-page" data-theme={theme}>
             <div className="channel-list-column">
                 {showFindPanel ? (
                     <div className="find-panel">
@@ -594,6 +798,15 @@ const handleRemoveReaction = (msgId: string, currentEmoji: string) => {
                         <div className="channel-list-header">
                             <h1>Channels</h1>
                             <div className="channel-header-actions">
+                                <button
+                                    className="channel-icon-btn"
+                                    onClick={toggleTheme}
+                                    aria-label="Toggle theme"
+                                    title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                                    type="button"
+                                >
+                                    {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+                                </button>
                                 <button className="channel-icon-btn" onClick={openFindPanel} aria-label="Find channels" type="button">
                                     <SearchIcon />
                                 </button>
@@ -637,8 +850,14 @@ const handleRemoveReaction = (msgId: string, currentEmoji: string) => {
                         <div className="channel-window-header">
                             <div
                                 className="channel-window-info-clickable"
-                                onClick={() => setShowChannelProfile(true)}
-                                style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", flex: 1 }}
+                                onClick={() => {
+                                    if (!isChannelDeleted) setShowChannelProfile(true);
+                                }}
+                                style={
+                                    isChannelDeleted
+                                        ? { pointerEvents: "none", cursor: "default", opacity: 0.6 }
+                                        : undefined
+                                }
                             >
                                 <div className="channel-window-avatar">
                                     <img src={resolveChannelPic(selectedChannel?.profilePic)} alt={selectedChannel?.name} style={{ pointerEvents: "none" }} />
@@ -653,25 +872,114 @@ const handleRemoveReaction = (msgId: string, currentEmoji: string) => {
                            // or unfollow
                           */}
 
-                          {!isCreator && (
+                          {!isCreator && !isChannelDeleted && (
                             <button className="channel-follow-btn" onClick={handleFollowButton}>{showFollwingButton?"Follow":"Unfollow"}</button>
                           )}
                         </div>
 
-                        {showChannelProfile && selectedChannel && (
+                        {showChannelProfile && selectedChannel && !isChannelDeleted && (
                             <ChannelProfile
                                 onBack={() => setShowChannelProfile(false)}
                                 senderId={senderId}
                                 channelId={selectedChannel._id}
                                 isCreator={isCreator}
+                                onChannelUpdated={(patch) => applyChannelPatch(selectedChannel._id, patch)}
                             />
                         )}
 
 <div className="channel-window-messages">
-    {msg.map((item:any)=>{
+    {displayMsgs.map((item:any, index:number)=>{
         const mine=item.senderId?.toString()===senderId?.toString();
-        return <div key={item._id} className={mine ? "message sender" : "message receiver"}>
+        const isFile = !!item.mimetype;
+        const isPoll = item.messageType === "poll";
+        const hasReactions = Array.isArray(item.reaction) && item.reaction.length > 0;
+        const isMenuOpen = openMsgMenuId === item._id;
+        const isReactionOpen = reactionMessage === item._id;
+        const menuOpensUp = displayMsgs.length > 3 && index >= displayMsgs.length - 2;
+
+        return <div
+            key={item._id}
+            className={`${mine ? "message sender" : "message receiver"}${isFile ? " media-bubble" : ""}${isPoll ? " poll-bubble" : ""}${hasReactions ? " has-reactions" : ""}`}
+        >
+            {/* SMILE BUTTON - channel delete hone par hide */}
+            {!isChannelDeleted && (
+                <button
+                    type="button"
+                    className={`wa-rx-btn${isReactionOpen ? " active" : ""}`}
+                    title="React"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMsgMenuId(null);
+                        setShowReactionDetail(null);
+                        setReactionMessage(prev => (prev === item._id ? null : item._id));
+                    }}
+                >
+                    <Smile size={16} />
+                </button>
+            )}
+
+            {/* CHEVRON MENU - channel delete hone par hide */}
+            {!isChannelDeleted && (
+                <div className={`wa-menu${isMenuOpen ? " open" : ""}${menuOpensUp ? " up" : ""}`}>
+                    <button
+                        type="button"
+                        className="wa-menu-btn"
+                        title="Message options"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setReactionMessage(null);
+                            setOpenMsgMenuId(isMenuOpen ? null : item._id);
+                        }}
+                    >
+                        <ChevronDown size={16} />
+                    </button>
+                    {isMenuOpen && (
+                        <div className="wa-menu-dropdown" onClick={(e) => e.stopPropagation()}>
+                            {mine ? (
+                                <>
+                                    {item.messageType==="text" && (
+                                        <div className="wa-menu-item" onClick={()=>handleEditClick(item)}>
+                                            <Pencil size={16} />
+                                            <span>Edit</span>
+                                        </div>
+                                    )}
+                                    {item.messageType==="text" && (
+                                        <div className="wa-menu-item" onClick={()=>{navigator.clipboard.writeText(item.message||""); setOpenMsgMenuId(null);}}>
+                                            <Copy size={16} />
+                                            <span>Copy</span>
+                                        </div>
+                                    )}
+                                    <div className="wa-menu-item" onClick={()=>{deleteForMe({channelId:selectedChannel._id,senderId,msgId:item._id}); removeLivePoll(item._id); setOpenMsgMenuId(null);}}>
+                                        <EyeOff size={16} />
+                                        <span>Delete for me</span>
+                                    </div>
+                                    <div className="wa-menu-item danger" onClick={()=>{deleteForEveryone({channelId:selectedChannel?._id,senderId,msgId:item._id}); removeLivePoll(item._id); setOpenMsgMenuId(null);}}>
+                                        <Trash2 size={16} />
+                                        <span>Delete for everyone</span>
+                                    </div>
+                                </>
+                            ):(
+                                <>
+                                    <div className="wa-menu-item" onClick={()=>{deleteForMe({channelId:selectedChannel._id,senderId,msgId:item._id}); removeLivePoll(item._id); setOpenMsgMenuId(null);}}>
+                                        <EyeOff size={16} />
+                                        <span>Delete for me</span>
+                                    </div>
+                                    {item.messageType==="text" && (
+                                        <div className="wa-menu-item" onClick={()=>{navigator.clipboard.writeText(item.message); setOpenMsgMenuId(null);}}>
+                                            <Copy size={16} />
+                                            <span>Copy</span>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {item.messageType==="text" && <span className="message-text">{renderMessageWithLinks(item.message)}</span>}
+
+            {isPoll && renderPollBody(item)}
 
             {item.mimetype?.startsWith("image/") && (
                 <div className="message-file message-image">
@@ -701,87 +1009,118 @@ const handleRemoveReaction = (msgId: string, currentEmoji: string) => {
 
             {item.mimetype && !item.mimetype.startsWith("image/") && !item.mimetype.startsWith("video/") && item.mimetype !== "application/pdf" && (
                 <a href={`${env.backendUrl}${item.message}`} target="_blank" rel="noreferrer" download className="message-file message-doc">
-                    <div className="file-icon generic-icon">📄</div>
+                    <div className="file-icon generic-icon"><FileText size={18} /></div>
                     <div className="file-info">
                         <span className="file-name">{item.orignalname || "file"}</span>
                     </div>
                 </a>
             )}
 
-            {/* emoji reaction button - GroupChat jaisa hi */}
-            <button className="reaction-btn" onClick={(e) => { e.stopPropagation(); setReactionMessage(item._id); }}>
-                😊
-            </button>
-
-            {reactionMessage === item._id && (
-                <div className="emoji-picker-popup" ref={reactionRef}>
-                    <EmojiPicker
-                        onEmojiClick={(emojiData) => {
-                            handleEmojiReaction(item._id, emojiData.emoji);
-                            setReactionMessage(null);
-                        }}
-                    />
+            {/* EMOJI PICKER OVERLAY */}
+            {isReactionOpen && !isChannelDeleted && (
+                <div
+                    className="gc-emoji-overlay"
+                    onClick={(e) => { e.stopPropagation(); setReactionMessage(null); }}
+                >
+                    <div
+                        className="gc-emoji-picker-popup"
+                        ref={reactionRef}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <EmojiPicker
+                            theme={theme === "dark" ? EmojiTheme.DARK : EmojiTheme.LIGHT}
+                            onEmojiClick={(emojiData) => {
+                                handleEmojiReaction(item._id, emojiData.emoji);
+                                setReactionMessage(null);
+                            }}
+                        />
+                    </div>
                 </div>
             )}
 
-            {item.reaction && item.reaction.length > 0 && (
-                <div className="reaction-badge" onClick={(e) => { e.stopPropagation(); setShowReactionDetail(item._id); }}>
+            {/* REACTION BADGE - channel delete hone par bhi dikhega aur click karke dekh sakenge */}
+            {hasReactions && (
+                <div
+                    className="gc-reaction-badge"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowReactionDetail(prev => (prev === item._id ? null : item._id));
+                    }}
+                >
                     {Object.entries(groupReactions(item.reaction))
                         .sort((a, b) => b[1].length - a[1].length)
                         .slice(0, 3)
                         .map(([emoji]) => (
-                            <span key={emoji}>{emoji}</span>
+                            <span key={emoji} className="gc-reaction-emoji">{emoji}</span>
                         ))}
-                    <span className="reaction-count">{formatReactionCount(item.reaction.length)}</span>
+                    <span className="gc-reaction-count">{formatReactionCount(item.reaction.length)}</span>
                 </div>
             )}
 
-            {showReactionDetail === item._id && (
-                <div className="reaction-detail-popup" ref={reactionDetailRef}>
-                    <div className="reaction-detail-header">
-                        {formatReactionCount(item.reaction.length)} reaction{item.reaction.length > 1 ? "s" : ""}
-                    </div>
+            {/* REACTION DETAIL POPUP - dekh sakte hain par channel delete hone par add/remove nahi kar sakte */}
+            {showReactionDetail === item._id && hasReactions && (
+                <div
+                    className="gc-reaction-overlay"
+                    onClick={(e) => { e.stopPropagation(); setShowReactionDetail(null); }}
+                >
+                    <div
+                        className="gc-reaction-detail-popup"
+                        ref={reactionDetailRef}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="gc-reaction-detail-header">
+                            <span>{formatReactionCount(item.reaction.length)} reaction{item.reaction.length > 1 ? "s" : ""}</span>
+                            <button
+                                type="button"
+                                className="gc-reaction-close-btn"
+                                onClick={() => setShowReactionDetail(null)}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
 
-                    <div className="reaction-pills-row">
-                        {Object.entries(groupReactions(item.reaction))
-                            .sort((a, b) => b[1].length - a[1].length)
-                            .map(([emoji, users]: [string, any]) => {
-                                const isMine = users.includes(senderId);
-                                return (
-                                    <div
-                                        key={emoji}
-                                        className={`reaction-pill ${isMine ? "reaction-pill--mine" : ""}`}
-                                        onClick={(e) => { e.stopPropagation(); if (isMine) handleRemoveReaction(item._id, emoji); }}
-                                    >
-                                        <span>{emoji}</span>
-                                        <span>{formatReactionCount(users.length)}</span>
-                                    </div>
-                                );
-                            })}
+                        <div className="gc-reaction-pills-row">
+                            {!isChannelDeleted && (
+                                <button
+                                    type="button"
+                                    className="gc-add-reaction-pill"
+                                    title="Add reaction"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowReactionDetail(null);
+                                        setReactionMessage(item._id);
+                                    }}
+                                >
+                                    <Smile size={15} />
+                                    <Plus size={12} />
+                                </button>
+                            )}
+                            {Object.entries(groupReactions(item.reaction))
+                                .sort((a, b) => b[1].length - a[1].length)
+                                .map(([emoji, users]: [string, any]) => {
+                                    const isMine = users.includes(senderId);
+                                    return (
+                                        <div
+                                            key={emoji}
+                                            className={`gc-reaction-pill${isMine ? " gc-reaction-pill--mine" : ""}`}
+                                            title={isMine && !isChannelDeleted ? "Tap to remove" : undefined}
+                                            style={isChannelDeleted ? { cursor: "default" } : undefined}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (isMine && !isChannelDeleted) handleRemoveReaction(item._id, emoji);
+                                            }}
+                                        >
+                                            <span>{emoji}</span>
+                                            <span className="gc-reaction-pill-count">{formatReactionCount(users.length)}</span>
+                                        </div>
+                                    );
+                                })}
+                        </div>
                     </div>
                 </div>
             )}
 
-            <div className="message-menu">
-                <button className="menu-button" onClick={(e)=>e.stopPropagation()}>⋮</button>
-                <div className="message-menu-dropdown">
-                    {mine ? (
-                        <>
-                            {item.messageType==="text" && <button onClick={()=>handleEditClick(item)}>Edit</button>}
-                            {item.messageType==="text" && <button onClick={()=>navigator.clipboard.writeText(item.message||"")}>Copy</button>}
-                            <button onClick={()=>deleteForMe({channelId:selectedChannel._id,senderId,msgId:item._id})}>Delete for me</button>
-                            <button onClick={()=>deleteForEveryone({channelId:selectedChannel?._id,senderId,msgId:item._id})}>Delete for everyone</button>
-                        </>
-                    ):(
-                        <>
-                          <button onClick={()=>deleteForMe({channelId:selectedChannel._id,senderId,msgId:item._id})}>Delete for me</button>
-                          {item.messageType==="text" && <button onClick={()=>navigator.clipboard.writeText(item.message)}>Copy</button>}
-                        </>
-                      )}
-                </div>
-            </div>
-
-            {editingMsgId === item._id && (
+            {editingMsgId === item._id && !isChannelDeleted && (
                 <div className="inline-edit-box" onClick={(e)=>e.stopPropagation()}>
                     <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)} autoFocus />
                     <button type="button" onClick={() => saveEdit(item._id)}>Save</button>
@@ -792,26 +1131,76 @@ const handleRemoveReaction = (msgId: string, currentEmoji: string) => {
     })}
 </div>
 
-                <div className="channel-window-input-wrap">
+                <div
+                    className="channel-window-input-wrap"
+                    style={
+                        isChannelDeleted
+                            ? { filter: "blur(2px)", opacity: 0.5, pointerEvents: "none", userSelect: "none" }
+                            : undefined
+                    }
+                >
 
-                    <form onSubmit={handleSubmit}>
-                        <input  disabled={!canSend} type="text" placeholder="Type an Update" 
-                        value={messageText} onChange={(e)=>setMessageText(e.target.value)} />
-                        <button disabled={!canSend}>Send</button>
-                    </form>
+                    {/* File: choose karte hi auto send */}
+                    <div className="footer-file-form">
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            style={{ display: "none" }}
+                            disabled={!canSend || isChannelDeleted}
+                            onChange={handleFilePick}
+                        />
+                        <button
+                            type="button"
+                            className="footer-icon-btn"
+                            title="Attach File"
+                            disabled={!canSend || isChannelDeleted}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <Paperclip size={20} />
+                        </button>
+                    </div>
 
-                    <form onSubmit={handleFileSubmit}>
-                        <input type="file" disabled={!canSend} placeholder="Type an Update" onChange={(e)=>setFile(e.target.files?.[0])} />
-                         <button disabled={!canSend} type="submit">Send</button>
+                    {/* Poll icon - GroupChat jaisa */}
+                    <button
+                        type="button"
+                        className="footer-icon-btn pollTriggerBtn"
+                        title="Create Poll"
+                        disabled={!canSend || isChannelDeleted}
+                        onClick={() => setShowCreatePoll(true)}
+                    >
+                        <BarChart2 size={20} />
+                    </button>
+
+                    <form onSubmit={handleSubmit} className="message-form">
+                        <input
+                            disabled={!canSend || isChannelDeleted}
+                            type="text"
+                            placeholder={isChannelDeleted ? "This channel was deleted" : "Type an Update"}
+                            value={messageText}
+                            onChange={(e)=>setMessageText(e.target.value)}
+                        />
+                        <button type="submit" className="send-msg-btn" disabled={!canSend || isChannelDeleted}>
+                            <Send size={18} />
+                        </button>
                     </form>
                         </div>    
                     </div>
                 ) :(
                     <div className="channel-window-empty">
+                        <img src="/WhatsApp.svg" alt="WhatsApp" />
                         <p>Select a channel to view it here</p>
                     </div>
                 )}
             </div>
+
+            {showCreatePoll && !isChannelDeleted && (
+                <div className="wp-themed-modal-scope">
+                    <CreatePollModal
+                        onClose={() => setShowCreatePoll(false)}
+                        onCreate={handleCreatePoll}
+                    />
+                </div>
+            )}
         </div>
     );
 }

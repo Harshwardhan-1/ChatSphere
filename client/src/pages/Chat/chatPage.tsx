@@ -153,7 +153,8 @@ const ChatPage = ({ data, data2 }: Props) => {
     if (grew && newAtEnd && !isPinSystemMessage) {
       if (wasAtBottomRef.current) {
         scrollToBottom();
-      } else {
+      } else if (lastMessage?.senderId !== data2.loginUserId) {
+        // sirf samne wale ka message aaye tabhi "new message" count badhao
         setNewMessageCount((prev) => prev + 1);
       }
     }

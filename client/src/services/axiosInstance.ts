@@ -7,15 +7,11 @@ const axiosInstance = axios.create({
     withCredentials: true,
 });
 
-
-//automatic added headers to everycall automatically
 axiosInstance.interceptors.request.use((config) => {
     const token = localStorage.getItem("accessToken");
-
-    if (token) {
+    if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
 });
 
@@ -34,7 +30,6 @@ const processQueue = (error: unknown, token: string | null = null) => {
             promise.resolve(token!);
         }
     });
-
     failedQueue = [];
 };
 
@@ -43,23 +38,27 @@ axiosInstance.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        if (
-            error.response?.status !== 401 ||
-            !originalRequest ||
-            originalRequest._retry ||
-            //call the refresh token 
-            originalRequest.url?.includes("/auth/refresh-token")
-        ) {
+        const isAuthEndpoint =
+            originalRequest?.url?.includes("/auth/refresh-token") ||
+            originalRequest?.url?.includes("/auth/login") ||
+            originalRequest?.url?.includes("/auth/register") ||
+            originalRequest?.url?.includes("/auth/google");
+
+        // Trigger refresh if status is 401 or backend sends token expired
+        const isTokenExpired =
+            error.response?.status === 401 ||
+            error.response?.data?.message === "jwt expired" ||
+            error.response?.data?.message === "Access token expired or invalid";
+
+        if (!isTokenExpired || !originalRequest || originalRequest._retry || isAuthEndpoint) {
             return Promise.reject(error);
         }
-
-
-        //call the same api again 
 
         if (isRefreshing) {
             return new Promise((resolve, reject) => {
                 failedQueue.push({ resolve, reject });
             }).then((token) => {
+                originalRequest.headers = originalRequest.headers || {};
                 originalRequest.headers.Authorization = `Bearer ${token}`;
                 return axiosInstance(originalRequest);
             });
@@ -78,14 +77,19 @@ axiosInstance.interceptors.response.use(
             const newToken = response.data.accessToken;
 
             localStorage.setItem("accessToken", newToken);
+            axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
             processQueue(null, newToken);
 
+            originalRequest.headers = originalRequest.headers || {};
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
             return axiosInstance(originalRequest);
         } catch (refreshError) {
-            processQueue(refreshError);
+            processQueue(refreshError, null);
             localStorage.removeItem("accessToken");
+            if (window.location.pathname !== "/login" && window.location.pathname !== "/signup") {
+                window.location.href = "/login";
+            }
             return Promise.reject(refreshError);
         } finally {
             isRefreshing = false;
