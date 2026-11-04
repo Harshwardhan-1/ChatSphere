@@ -6,10 +6,29 @@ import { groupChatModel } from '../models/group.create.model';
 import { groupCallCreatedType } from '../types/group.call.types';
 import { emitMessageInGroup } from './group.message.controller';
 import { createLiveKitToken } from '../utils/liveKitToken';
-import { callChat } from '../models/InCallChat.model';
 
-
-
+const emitGroupCallStatus = (
+    group: any,
+    io: Server,
+    users: { [key: string]: string },
+    callStatus: "busy" | "free",
+    activeCallMsgId: string | null
+) => {
+    const memberIds = Array.from(new Set([
+        ...(group.peoplesId || []).map((p: any) => p.toString()),
+        ...(group.admin || []).map((a: any) => a.toString()),
+    ]));
+    for (const id of memberIds) {
+        const sid = users[id];
+        if (sid) {
+            io.to(sid).emit("group_call_status_changed", {
+                groupId: group._id.toString(),
+                callStatus,
+                activeCallMsgId,
+            });
+        }
+    }
+};
 
 const isUserEngagedElsewhere = async (userId: string, excludeGroupId: string): Promise<boolean> => {
     const busyGroups = await groupChatModel.find({
@@ -22,7 +41,6 @@ const isUserEngagedElsewhere = async (userId: string, excludeGroupId: string): P
         const latestCallMsg = await groupMessage
             .findOne({ groupId: grp._id.toString(), messageType: "call" })
             .sort({ createdAt: -1 });
-
         if (!latestCallMsg) continue;
 
         const isOngoingHere = (latestCallMsg.callStatus ?? []).some(
@@ -32,9 +50,6 @@ const isUserEngagedElsewhere = async (userId: string, excludeGroupId: string): P
     }
     return false;
 };
-
-
-//user click on create group call
 
 export const groupCall=async(data:groupCallCreatedType,
     socket:Socket,io:Server,
@@ -46,10 +61,7 @@ export const groupCall=async(data:groupCallCreatedType,
         if(!g){
             throw new Error("group not exist");
         }
-        //first check if a admin chooses only admin can send message then no video call is 
-        //possible by this user
         if(g.onlyAdminSendMessage){
-            //here we check if this person is admin or not
             const isAdmin=g.admin.some(
                 (id)=>id.toString()===data.senderId.toString()
             );
@@ -57,9 +69,6 @@ export const groupCall=async(data:groupCallCreatedType,
                 throw new Error("you can't make video call because admin has closed that option");
             }
         }
-
-        //now we check if the person is currently the member of group or not
-
         const isMember=g.peoplesId.some(
             (id)=>id.toString()===data.senderId.toString()
         );
@@ -73,9 +82,6 @@ export const groupCall=async(data:groupCallCreatedType,
         if(g.callStatus==="busy"){
             throw new Error("already call is going wait for some time");
         }
-
-
-        //check that some other person doesn't again call when the call is on going
         const id=Math.floor(Math.random()*10).toString();
         const create=await groupMessage.create({
             groupId:data.groupId,
@@ -87,15 +93,16 @@ export const groupCall=async(data:groupCallCreatedType,
         if(!create){
             throw new Error("failed to create Msg");
         }
+
         create.isSend = true;
         const senderObjId = new mongoose.Types.ObjectId(data.senderId);
         create.seenBy.push(senderObjId);
         create.deliveredTo.push(senderObjId);
+        create.callStatus!.push({ userId: senderObjId, status: "ongoing" });
         await create.save();
 
         g.callStatus="busy";
         await g.save();
-
 
         await storeGroupLastMessage({
             groupId:data.groupId,
@@ -107,25 +114,24 @@ export const groupCall=async(data:groupCallCreatedType,
             filename:create?.filename,
             mimetype:create?.mimetype,
         },g);
+
         await emitMessageInGroup({_id:data.groupId,senderId:data.senderId},create,users,activeGroupChats,socket,io);
+        emitGroupCallStatus(g, io, users, "busy", create._id.toString());
 
-
-       
         for(let i=0;i<data.receiverId.length;i++){
-            const id=data.receiverId[i].toString();
-            if(id===data.senderId.toString())continue;
-            const receiverSocketId=users[id];
-
-            const isEngaged = await isUserEngagedElsewhere(id, data.groupId);
-
+            const rid=data.receiverId[i].toString();
+            if(rid===data.senderId.toString())continue;
+            const receiverSocketId=users[rid];
+            const isEngaged = await isUserEngagedElsewhere(rid, data.groupId);
             if(receiverSocketId && !isEngaged){
-                //from frontend we will call accepted for it and then join them at accepted function
-                create.callStatus!.push({userId:new mongoose.Types.ObjectId(id),status:"ongoing"});
+                create.callStatus!.push({userId:new mongoose.Types.ObjectId(rid),status:"ongoing"});
                 io.to(receiverSocketId).emit("user_available_for_call",(
                     {
                         groupId:data.groupId,
+                        groupName:g.groupName,
+                        groupImage:g.groupImage,
                         senderId:data.senderId,
-                        receiverId:id,
+                        receiverId:rid,
                         msgId:create._id.toString(),
                         messageType:data.messageType,
                     }
@@ -134,11 +140,12 @@ export const groupCall=async(data:groupCallCreatedType,
         }
         await create.save();
 
-        // caller ko khud ka LiveKit token bhejo aur call active kar do
         const LiveKitData=await createLiveKitToken(data.senderId,data.groupId);
         socket.emit("user_accepted_group_call",(
             {
                 groupId:data.groupId,
+                groupName:g.groupName,
+                groupImage:g.groupImage,
                 senderId:data.senderId,
                 LiveKitData,
                 msgId:create._id.toString(),
@@ -148,23 +155,7 @@ export const groupCall=async(data:groupCallCreatedType,
     }catch(err){
         throw err;
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-//reject call
-
-//senderId is the person who calls and receiverId is the person who cancels the calls
-//we will also send msgId that is easier for us to determine message
+};
 
 export const callRejected=async(data:
     {groupId:string,senderId:string,receiverId:string,msgId:string},
@@ -186,6 +177,7 @@ export const callRejected=async(data:
         );
         if(msg.callStatus.length===0){
             group.callStatus="free";
+            emitGroupCallStatus(group, io, users, "free", null);
         }
         await group.save();
         await msg.save();
@@ -198,19 +190,8 @@ export const callRejected=async(data:
     }catch(err){
         throw err;
     }
-}
+};
 
-
-
-
-
-
-
-
-
-
-//call accepted 
-//jisna call accept kiya ha wo ha senderId 
 export const callAccepted=async(data:{groupId:string,senderId:string,msgId:string,messageType:string},
     socket:Socket,io:Server,
     users:{[key:string]:string},
@@ -224,19 +205,20 @@ export const callAccepted=async(data:{groupId:string,senderId:string,msgId:strin
             ...group.peoplesId.map((p) => p.toString()),
             ...group.admin.map((a) => a.toString()),
         ]));
-        const msg=await groupMessage.findById(data.msgId);
 
+        const msg=await groupMessage.findById(data.msgId);
         if(!msg){
             throw new Error("call message not found");
         }
         const userId=data.senderId.toString();
-
         if(!msg.seenBy.some((id)=>id.toString()===userId)){
             msg.seenBy.push(new mongoose.Types.ObjectId(data.senderId));
         }
-
         if(!msg.deliveredTo.some((id)=>id.toString()===userId)){
             msg.deliveredTo.push(new mongoose.Types.ObjectId(data.senderId));
+        }
+        if(!(msg.callStatus ?? []).some((entry)=>entry.userId.toString()===userId)){
+            msg.callStatus!.push({ userId: new mongoose.Types.ObjectId(data.senderId), status: "ongoing" });
         }
         await msg.save();
         
@@ -247,6 +229,8 @@ export const callAccepted=async(data:{groupId:string,senderId:string,msgId:strin
                 io.to(receiverSocketId).emit("new_member_added_in_groupCall",(
                     {
                         groupId:data.groupId,
+                        groupName:group.groupName,
+                        groupImage:group.groupImage,
                         userId:id,
                         newMemberId:data.senderId,
                         liveKitData,
@@ -259,20 +243,7 @@ export const callAccepted=async(data:{groupId:string,senderId:string,msgId:strin
     }catch(err){
         throw err;
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-//leave group call
+};
 
 export const leaveGroupCall=async(data:
     {groupId:string,senderId:string,msgId:string},
@@ -295,11 +266,11 @@ export const leaveGroupCall=async(data:
         );
         if(msg.callStatus.length===0){
             group.callStatus="free";
+            emitGroupCallStatus(group, io, users, "free", null);
         }
         await group.save();
         await msg.save();
 
-        // ===== FIX: yahan bhi peoplesId + admin dedupe kar diya =====
         const memberIds = Array.from(new Set([
             ...group.peoplesId.map((p) => p.toString()),
             ...group.admin.map((a) => a.toString()),
@@ -317,6 +288,7 @@ export const leaveGroupCall=async(data:
                         liveKitData,
                         msgId:data.msgId,
                         messageType:msg.message,
+                        remainingCount: msg.callStatus.length,
                     }
                 ));
             }
@@ -324,20 +296,7 @@ export const leaveGroupCall=async(data:
     }catch(err){
         throw err;
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-//if no response for longer time remove
-
+};
 
 export const noResponseOfCall=async(data:
     {groupId:string,senderId:string,msgId:string},
@@ -354,16 +313,15 @@ export const noResponseOfCall=async(data:
         if(!msg){
             throw new Error("msg not found");
         }
-        msg.callStatus=msg.callStatus.filter(
+        msg.callStatus=msg.callStatus!.filter(
             (id)=>id.userId.toString()!==data.senderId.toString()
         );
         if(msg.callStatus.length===0){
             group.callStatus="free";
+            emitGroupCallStatus(group, io, users, "free", null);
         }
         await msg.save();
         await group.save();
-
-        //jisna call kara group ka liya usko emit ab ki ya join nahi ho raha ha
 
         const receiverSocketId=users[msg.senderId];
         if(receiverSocketId){
@@ -374,16 +332,7 @@ export const noResponseOfCall=async(data:
     }catch(err){
         throw err;
     }
-}
-
-
-
-
-
-
-
-
-
+};
 
 export const cleanupUserFromCalls = async (
     userId: string,
@@ -409,6 +358,7 @@ export const cleanupUserFromCalls = async (
 
             if (msg.callStatus.length === 0) {
                 group.callStatus = "free";
+                emitGroupCallStatus(group, io, users, "free", null);
             }
             await group.save();
             await msg.save();
@@ -429,6 +379,7 @@ export const cleanupUserFromCalls = async (
                         liveKitData,
                         msgId: msg._id.toString(),
                         messageType: msg.message,
+                        remainingCount: msg.callStatus.length,
                     });
                 }
             }

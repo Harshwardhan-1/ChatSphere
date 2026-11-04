@@ -228,20 +228,20 @@ export const updateGroupImage=async(req:authRequest,res:Response,next:NextFuncti
                 message:"group not found",
             });
         }
-        if(findGroup.canChangeGroupImage){
-            findGroup.groupImage=`/uploads/${file.originalname}`;
-            await findGroup.save();
-            return res.status(200).json({
-                success:true,
-                message:"successfull",
-                file:{
-                    orignalname:file.originalname,
-                    filename:file.filename,
-                    mimetype:file.mimetype,
-                    path:`/uploads/${file.filename}`,
-                },
-            });
-        }else{
+            if (findGroup.canChangeGroupImage) {
+                findGroup.groupImage = `/uploads/${file.filename}`;
+                await findGroup.save();
+                return res.status(200).json({
+                    success: true,
+                    message: "successfull",
+                    file: {
+                        orignalname: file.originalname,
+                        filename: file.filename,
+                        mimetype: file.mimetype,
+                        path: `/uploads/${file.filename}`,
+                    },
+                });
+            }else{
             //here we will find if it is admin or not if admin allow
             const check=findGroup.admin.some(
                 (id)=>id.toString()===senderId.toString()
@@ -358,7 +358,7 @@ export const personLeaveGroup=async(data:{_id:string,senderId:string})=>{
       const id=new mongoose.Types.ObjectId(data.senderId);
       group.removedMembers.push(id);
       group.peoplesId=group.peoplesId.filter(
-        (id)=>id.toString()===data.senderId.toString()
+        (id)=>id.toString()!==data.senderId.toString()
       );
       await group.save();
       await Promise.all([
@@ -498,6 +498,8 @@ export const removeMembersPermission=async(data:{_id:string,senderId:string},soc
         if(!group.canRemoveGroupMembers){
             if(group.groupCreatorId.toString()===data.senderId.toString()){
             socket.emit("remove_members_permission",({message:"permission granted",groupCreatorId:group.groupCreatorId}));
+            }else{
+                socket.emit("remove_members_permission",({message:"permission denied",groupCreatorId:group.groupCreatorId}));
             }
         }else{
         const checkAdmin=group.admin.some(
@@ -802,15 +804,15 @@ export const joinGroup=async(req:authRequest,res:Response,next:NextFunction)=>{
         }
 
         const members=await AllMembers({_id:group._id.toString()});
-        for(let i=0;i<group.peoplesId.length;i++){
-            const id=group.peoplesId[i].toString();
-            const receiverSocketId=users[id];
-            const msg=await groupMessage.create({
+        const msg=await groupMessage.create({
                 groupId:group._id,
                 senderId:user._id.toString(),
                 message:`${name} joined using the group link`,
                 messageType:"system",
             });
+        for(let i=0;i<group.peoplesId.length;i++){
+            const id=group.peoplesId[i].toString();
+            const receiverSocketId=users[id];
             if(receiverSocketId){
                 io.to(receiverSocketId).emit("receive_group_message",(msg));
                 io.to(receiverSocketId).emit("all_group_members",(members));

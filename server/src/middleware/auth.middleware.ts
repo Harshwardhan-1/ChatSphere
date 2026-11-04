@@ -25,7 +25,15 @@ export const isUserLoggedIn=async(req:authRequest,res:Response,next:NextFunction
             });
         }
         //after verificaton it the data that we set in token is easily identifiable by decodeddata
-        const decodedData=jwt.verify(token,JWT_SECRET as string)as userpayload;
+        let decodedData:userpayload
+        try{
+         decodedData=jwt.verify(token,JWT_SECRET as string)as userpayload;
+        }catch(jwtErr){
+            return res.status(401).json({
+                success:false,
+                message:"Access token expired or invalid",
+            });
+        }
         const user=await User.findOne({email:decodedData.email}).select("-password");
         if(!user){
             return res.status(404).json({
@@ -54,7 +62,15 @@ export const isAdminLoggedIn=async(req:authRequest,res:Response,next:NextFunctio
                 message:"token not found",
             });
         }
-        const decodedData=jwt.verify(token,JWT_SECRET as string) as userpayload;
+        let decodedData:userpayload;
+        try{
+          decodedData=jwt.verify(token,JWT_SECRET as string) as userpayload;
+        }catch(jwtErr){
+            return res.status(401).json({
+                success:false,
+                message:"Access token expired or invalid",
+            });
+        }
         const user=await User.findOne({email:decodedData.email}).select("-password");
         if(!user || user.role!== 'ADMIN'){
             return res.status(403).json({

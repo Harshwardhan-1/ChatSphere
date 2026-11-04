@@ -23,7 +23,8 @@ import { InCallSocket } from "./InCallChat.socket";
 import { docsSocket } from "./docs.socket";
 import { docsMessageSocket } from "./docs.message.socket";
 import { promptSocket } from "./prompts.socket";
-
+import { profileImage } from "../controllers/profile.controller";
+import { description } from "../controllers/profile.controller";
 
 export let io:Server;
 export const users:{[key:string]:string}={};
@@ -369,6 +370,14 @@ io.on('connection',(socket)=>{
             socket.emit("err_msg",(error));
         }
      });
+
+    socket.on("profile_image", (data) => {
+    profileImage(data, socket, io, users).catch((err) => console.error("profile_image:", err));
+});
+
+socket.on("description", (data) => {
+    description(data, socket, io, users).catch((err) => console.error("description:", err));
+});
 
     socket.on('disconnect',async()=>{
         console.log("disconnected",socket.id);

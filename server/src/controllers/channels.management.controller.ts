@@ -411,6 +411,7 @@ export const updateChannelProfilePic=async(data:
 
 
 //delete channel
+//delete channel
 export const deleteChannel=async(data:
     {_id:string,senderId:string},
     socket:Socket,io:Server,
@@ -424,20 +425,17 @@ export const deleteChannel=async(data:
         if(data.senderId.toString()!==channel.channelCreator.toString()){
             throw new Error("don't have access to delete this channel only owner can delete this channel");
         }
-        for(let i=0;i<channel.followers.length;i++){
-            const id=channel.followers[i].toString();
-            const receiverSocketId=users[id];
-            if(receiverSocketId){
-                io.to(receiverSocketId).emit("channel_deleted",({_id:data._id,message:"channel_no_longer_exist"}));
-            }
-        }
-        socket.emit("channel_deleted",({_id:data._id,message:"channel_no_longer_exist"}));
         await channel.deleteOne();
+        
+        // Sabhi connected users (creator, followers, aur explore/discover list walo) ko real-time update
+        io.emit("channel_deleted", {
+            _id: data._id.toString(),
+            message: "channel_no_longer_exist"
+        });
     }catch(err){
         throw err;
     }
 }
-
 
 
 

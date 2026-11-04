@@ -551,9 +551,14 @@ export const editTitle=async(data:
     }
 }
 
-
-
-
+export const getChannelPoll=async(data:{ 
+    channelId:string; 
+    pollId: string
+ }, socket: Socket)=>{
+  const poll=await pollModel.findById(data.pollId);
+  if (!poll)throw new Error("poll not found");
+  socket.emit("channel_poll_details", poll);
+};
 
 
 
@@ -583,28 +588,28 @@ export const toggleLike=async(data:
         if(!poll){
             throw new Error("poll not found");
         }
-        for(let i=0;i<poll.options.length;i++){
-            if(poll.options[i].toString()!==data.pollId.toString()){
-                poll.options[i].peoplesId.filter(
-                  (id)=>id.toString()!==data.senderId.toString()
+        for(const opt of poll.options){
+            if(opt._id.toString()!==data.pollId.toString()){
+                opt.peoplesId=opt.peoplesId.filter(
+                    (id)=>id.toString()!==data.senderId.toString()
                 );
             }
         }
         await poll.save();
-            const isSameId=poll.options.find(
-                (id)=>id.toString()===data.pollId.toString()  
+        const isSameId=poll.options.find(
+            (o)=>o._id.toString()===data.pollId.toString()
+        );
+        if(isSameId){
+            const checkAlreadyToggle=isSameId.peoplesId.some(
+                (id)=>id.toString()===data.senderId.toString()
             );
-            if(isSameId){
-                const checkAlreadyToggle=isSameId.peoplesId.some(
-                    (id)=>id.toString()===data.senderId.toString()
+            if(checkAlreadyToggle){
+                isSameId.peoplesId=isSameId.peoplesId.filter(
+                    (id)=>id.toString()!==data.senderId.toString()
                 );
-                if(checkAlreadyToggle){
-                    isSameId.peoplesId=isSameId.peoplesId.filter(
-                        (id)=>id.toString()!==data.senderId.toString()  
-                    );
-                }else{
-                    isSameId.peoplesId.push(new mongoose.Types.ObjectId(data.senderId));
-                }
+            }else{
+                isSameId.peoplesId.push(new mongoose.Types.ObjectId(data.senderId));
+            }
         }
         await poll.save();
         for(let i=0;i<channel.followers.length;i++){
@@ -653,7 +658,7 @@ export const toggleLikeMultiple=async(data:
             throw new Error("poll not found");
         }
         const getPoll=poll.options.find(
-            (id)=>id.toString()===data.pollId.toString()
+            (o)=>o._id.toString()===data.pollId.toString()
         );
         if(getPoll){
             const check=getPoll.peoplesId.some(
@@ -674,22 +679,14 @@ export const toggleLikeMultiple=async(data:
             const active=activeChannels[id]===data.channelId.toString();
             if(id===data.senderId.toString())continue;
             if(receiverSocketId && active){
-                io.to(receiverSocketId).emit("channel_pole_updated",(poll));
+                io.to(receiverSocketId).emit("channel_poll_updated",(poll));
             }
         }
-        socket.emit("channel_pole_updated",(poll));
+        socket.emit("channel_poll_updated",(poll));
     }catch(err){
         throw err;
     }
 }
-
-
-
-
-
-
-
-
 
 
 export const getAllChannelLastMessageStored=async(data:{senderId:string},socket:Socket)=>{

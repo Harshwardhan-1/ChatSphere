@@ -287,49 +287,6 @@ export const deleteFromMe=async(data:messageAction)=>{
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //delete for me multiple messages delete for me
 
 
@@ -347,8 +304,6 @@ export const delete_from_me=async(data:{groupId:string,senderId:string,receiverI
         throw err;
     }
 }
-
-
 
 
 //clear chat
@@ -445,23 +400,6 @@ export const messageInfo=async(data:messageInfoConfig)=>{
         throw err;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -725,21 +663,6 @@ export const changedMuteNotificationSetting=async(data:{_id:string,senderId:stri
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //extra flag for disappearing value
 
 export const canChange=async(data:
@@ -844,12 +767,8 @@ export const changeGroupDisappearingMessageSetting=async(data:
                 return data.duration;
             }
         }
-        
-        
-        
-        
         else{
-            const checkIsAdmin=group.peoplesId.some(
+            const checkIsAdmin=group.admin.some(
                 (id)=>id.toString()===data.senderId.toString()
             );
             if(!checkIsAdmin){
@@ -1218,11 +1137,7 @@ export const showAllMessage=async(data:{_id:string,senderId:string})=>{
         {groupId:data._id,
         hideIt:{$nin:[data.senderId]}
 },
-    ).sort({createdAt:1});
-
-    for(let i=0;i<message.length;i++){
-        await message[i].populate("senderId","name avatar");
-    }
+    ).sort({createdAt:1}).populate("senderId","name avatar");
     return message;
     }catch(err){
         throw err;

@@ -103,29 +103,21 @@ export const deleteCommunity=async(data:
             throw new Error("community don't exist");
         }
         await c.deleteOne();
-        for(let i=0;i<c.members.length;i++){
-            const id=c.members[i].toString();
-            const receiverSocketId=users[id];
-            if(!receiverSocketId || id==data.creatorId)continue;
-            io.to(receiverSocketId).emit("community_deleted",({communityId:data.communityId}));
-            
-
-            //we will emit one more time because the persons who are currently in that we have to show
-            //them alert that this community is deleted or something else
-            
-                //in community record we are storing userId, as key and community id as data
-
-            const isOnChatId=communityRecord[id];
-            if(isOnChatId===data.communityId){
-                io.to(receiverSocketId).emit("show_community_deleted_alert",({communityId:data.communityId}));
-            }
+        for (let i = 0; i < c.members.length; i++) {
+        const id = c.members[i].toString();
+        const receiverSocketId = users[id];
+        if (!receiverSocketId || id === data.creatorId.toString()) continue;
+        const isOnChatId = communityRecord[id];
+        if (isOnChatId === data.communityId) {
+            io.to(receiverSocketId).emit("show_community_deleted_alert", {
+                communityId: data.communityId,
+            });
         }
-
+        io.to(receiverSocketId).emit("community_deleted", {
+            communityId: data.communityId,
+        });
+}
         socket.emit("community_deleted",({communityId:data.communityId}));
-        const isOnChatId=communityRecord[data.creatorId];
-        if(isOnChatId===data.communityId){
-            socket.emit("show_community_deleted_alert",({communityId:data.communityId}));
-        }
     }catch(err){
         throw err;
     }

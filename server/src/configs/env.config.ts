@@ -15,5 +15,5 @@ export const{
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
     GROQ_API_KEY,
-    JWT_REFRESH_SECRET
+    JWT_REFRESH_SECRET,
 }=process.env     

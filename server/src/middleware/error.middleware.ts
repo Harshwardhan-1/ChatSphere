@@ -21,6 +21,10 @@ try{
      error=new Error(message);
      error.statusCode=400;
     }
+     if(err.name==='TokenExpiredError'||err.name==='JsonWebTokenError'){
+            error=new Error("Access token expired or invalid");
+            error.statusCode=401;
+        }
     return res.status(error.statusCode || 500).json({
         success:false,
         message:error.message,

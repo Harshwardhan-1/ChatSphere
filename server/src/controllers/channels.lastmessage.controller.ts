@@ -10,7 +10,7 @@ export const storeLastMessage=async(data:createChannelMsgConfig)=>{
         if(lastMsg){
             lastMsg.channelId=new mongoose.Types.ObjectId(data.channelId);
             lastMsg.senderId=new mongoose.Types.ObjectId(data.senderId),
-            lastMsg.msgId=lastMsg.msgId,
+            lastMsg.msgId=data.msgId,
             lastMsg.message=data.message;
             lastMsg.messageType=data.messageType;
             lastMsg.orignalname=data?.orignalname;
@@ -44,20 +44,28 @@ export const storeLastMessage=async(data:createChannelMsgConfig)=>{
 
 export const update_last_message_delete=async(data:{channelId:string,senderId:string})=>{
     try{
-       const lastMessage=await channelMessage.findOne(
-        {channelId:data.channelId,messageType:{$nin:["system"]}
-    });
-    if(!lastMessage)return;
-    const lastMsg=await channelLastMessage.findOne({channelId:data.channelId});
-    if(lastMsg){
+        // sabse naya message chahiye, isliye _id descending sort
+        const lastMessage=await channelMessage.findOne(
+            {channelId:data.channelId,messageType:{$nin:["system"]}}
+        ).sort({_id:-1});
+
+        const lastMsg=await channelLastMessage.findOne({channelId:data.channelId});
+        if(!lastMsg) return;
+
+        // koi message bacha hi nahi: record hata do, aur frontend ko khali preview bhejo
+        if(!lastMessage){
+            await lastMsg.deleteOne();
+            return {channelId:data.channelId,message:"",messageType:"text",updatedAt:new Date()};
+        }
+
         lastMsg.senderId=lastMessage.senderId;
-        lastMsg.msgId=lastMessage._id.toString(),
+        lastMsg.msgId=lastMessage._id.toString();
         lastMsg.message=lastMessage.message;
         lastMsg.messageType=lastMessage.messageType;
-
+        lastMsg.orignalname=lastMessage.orignalname;
+        lastMsg.mimetype=lastMessage.mimetype;
         await lastMsg.save();
         return lastMsg;
-    }
     }catch(err){
         throw err;
     }
