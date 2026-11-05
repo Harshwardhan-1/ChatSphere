@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Children, isValidElement, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import EmojiPicker from "emoji-picker-react";
+import EmojiPicker, { Theme as EmojiTheme } from "emoji-picker-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Sun, Moon, Plus, Pencil, Trash2, Smile, Send, Copy, Check, Search } from "lucide-react";
 import { socket } from "../../utils/socket"; 
 import "./ChatWithAi.css";
 
@@ -20,14 +23,83 @@ type ChatListItem = {
     message: string;
 };
 
+// code block: language ka naam + copy button (GPT / Claude jaisa)
+function CodeBlock({ children }: { children?: ReactNode }) {
+    const [copied, setCopied] = useState(false);
+    const child = Children.toArray(children)[0];
+    const props: any = isValidElement(child) ? child.props : {};
+    const lang = /language-([\w-]+)/.exec(props.className || "")?.[1] || "code";
+    const raw = String(props.children ?? "").replace(/\n$/, "");
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(raw);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+    };
+
+    return (
+        <div className="ai-code-block">
+            <div className="ai-code-head">
+                <span>{lang}</span>
+                <button type="button" onClick={handleCopy}>
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                    <span>{copied ? "Copied" : "Copy"}</span>
+                </button>
+            </div>
+            <pre>
+                <code className={props.className}>{raw}</code>
+            </pre>
+        </div>
+    );
+}
+
+// AI ka reply markdown se proper format mein
+function MarkdownMessage({ text }: { text: string }) {
+    return (
+        <div className="ai-md">
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                    pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
+                    a: ({ children, href }) => (
+                        <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+                    ),
+                    table: ({ children }) => (
+                        <div className="ai-table-wrap"><table>{children}</table></div>
+                    ),
+                }}
+            >
+                {text}
+            </ReactMarkdown>
+        </div>
+    );
+}
+
 export function ChatWithAi() {
     const location = useLocation();
     const senderId: string | undefined = location.state?.senderId;
+
+    // GroupChat jaisa hi theme (same localStorage key, same data-theme)
+    const [theme, setTheme] = useState<"light" | "dark">(() => {
+        const saved = localStorage.getItem("wp-theme");
+        if (saved === "dark" || saved === "light") return saved;
+        return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    });
+
+    useEffect(() => {
+        document.documentElement.setAttribute("data-theme", theme);
+        localStorage.setItem("wp-theme", theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    };
 
     const [chatList, setChatList] = useState<ChatListItem[]>([]);
     const [messages, setMessages] = useState<ChatMsg[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [text, setText] = useState("");
+    const [search, setSearch] = useState("");
     const [aiTyping, setAiTyping] = useState(false);
     const [error, setError] = useState("");
 
@@ -150,7 +222,7 @@ export function ChatWithAi() {
             socket.off("msg_created", onMsgCreated);
             socket.off("all_chat_message", onAllMessages);
             socket.off("prompt_msg_deleted", onMsgDeleted);
-            socket.off("chat_list_moved_top", onMovedTop);
+            socket.off("chat_list_moved_up", onMovedTop);
             socket.off("chat_list_item_deleted", onListItemDeleted);
             socket.off("chat_list_item_renamed", onListItemRenamed);
             socket.off("ai_chat_reaction", onReaction);
@@ -240,13 +312,44 @@ export function ChatWithAi() {
 
     const activeTitle = chatList.find((c) => c._id === activeChatId)?.message ?? "New chat";
 
+    // title se search
+    const q = search.trim().toLowerCase();
+    const filteredChats = q
+        ? chatList.filter((c) => (c.message || "").toLowerCase().includes(q))
+        : chatList;
+
     return (
-        <div className="ai-layout">
+        <div className="ai-layout" data-theme={theme}>
             <aside className="ai-sidebar">
-                <button className="ai-new-chat" onClick={handleNewChat}>New chat</button>
+                <div className="ai-sidebar-top">
+                    <h3>AI Chat</h3>
+                    <button
+                        type="button"
+                        className="ai-icon-btn"
+                        onClick={toggleTheme}
+                        title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    >
+                        {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+                    </button>
+                </div>
+
+                <button className="ai-new-chat" onClick={handleNewChat}>
+                    <Plus size={18} />
+                    <span>New chat</span>
+                </button>
+
+                <div className="ai-search">
+                    <Search size={16} />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search chats"
+                    />
+                </div>
 
                 <div className="ai-chat-list">
-                    {chatList.map((item) => (
+                    {filteredChats.map((item) => (
                         <div
                             key={item._id}
                             className={`ai-chat-item${item._id === activeChatId ? " active" : ""}`}
@@ -258,21 +361,34 @@ export function ChatWithAi() {
                                     title="Rename"
                                     aria-label="Rename chat"
                                     onClick={(e) => { e.stopPropagation(); handleRename(item); }}
-                                >✏️</button>
+                                ><Pencil size={15} /></button>
                                 <button
                                     title="Delete"
                                     aria-label="Delete chat"
                                     onClick={(e) => { e.stopPropagation(); handleDeleteChat(item); }}
-                                >🗑️</button>
+                                ><Trash2 size={15} /></button>
                             </span>
                         </div>
                     ))}
                     {chatList.length === 0 && <p className="ai-side-empty">No chats yet</p>}
+                    {chatList.length > 0 && filteredChats.length === 0 && (
+                        <p className="ai-side-empty">No chats found</p>
+                    )}
                 </div>
             </aside>
 
             <main className="ai-main">
-                <header className="ai-header">{activeTitle}</header>
+                <header className="ai-header">
+                    <span className="ai-header-title">{activeTitle}</span>
+                    <button
+                        type="button"
+                        className="ai-icon-btn"
+                        onClick={toggleTheme}
+                        title={theme === "dark" ? "Light Mode" : "Dark Mode"}
+                    >
+                        {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                    </button>
+                </header>
 
                 <div className="ai-messages">
                     {messages.length === 0 && !aiTyping && (
@@ -281,23 +397,27 @@ export function ChatWithAi() {
 
                     {messages.map((m) => (
                         <div key={m._id} className={`ai-msg-row ${m.role === "ai" ? "ai" : "me"}`}>
-                            <div className="ai-bubble">
+                            <div className={`ai-bubble${m.emoji ? " has-rx" : ""}`}>
                                 <div className="ai-msg-tools">
                                     <button
                                         className="ai-tool-btn"
                                         title="React"
                                         aria-label="React to message"
                                         onClick={(e) => { e.stopPropagation(); setReactionMessage(m._id); }}
-                                    >😊</button>
+                                    ><Smile size={15} /></button>
                                     <button
                                         className="ai-tool-btn"
                                         title="Delete message"
                                         aria-label="Delete message"
                                         onClick={() => handleDeleteMsg(m._id)}
-                                    >🗑️</button>
+                                    ><Trash2 size={15} /></button>
                                 </div>
 
-                                <div className="ai-text">{m.message}</div>
+                                {m.role === "ai" ? (
+                                    <MarkdownMessage text={m.message} />
+                                ) : (
+                                    <div className="ai-text">{m.message}</div>
+                                )}
 
                                 {m.emoji && (
                                     <div
@@ -313,6 +433,7 @@ export function ChatWithAi() {
                             {reactionMessage === m._id && (
                                 <div className="ai-emoji-popup" ref={reactionRef}>
                                     <EmojiPicker
+                                        theme={theme === "dark" ? EmojiTheme.DARK : EmojiTheme.LIGHT}
                                         onEmojiClick={(emojiData) => {
                                             handleEmojiReaction(m._id, emojiData.emoji);
                                             setReactionMessage(null);
@@ -331,7 +452,8 @@ export function ChatWithAi() {
                                             className="ai-add-reaction-pill"
                                             onClick={(e) => { e.stopPropagation(); setReactionMessage(m._id); }}
                                         >
-                                            😊+
+                                            <Smile size={15} />
+                                            <Plus size={12} />
                                         </button>
                                         <div className="ai-reaction-pill">
                                             <span>{m.emoji}</span>
@@ -376,7 +498,14 @@ export function ChatWithAi() {
                         onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
                         placeholder="Type your message here"
                     />
-                    <button onClick={handleSend} disabled={aiTyping || !text.trim()}>Send</button>
+                    <button
+                        className="ai-send-btn"
+                        onClick={handleSend}
+                        disabled={aiTyping || !text.trim()}
+                        aria-label="Send"
+                    >
+                        <Send size={18} />
+                    </button>
                 </div>
             </main>
         </div>

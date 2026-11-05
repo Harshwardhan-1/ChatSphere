@@ -7,9 +7,15 @@ import { chatWithAI } from '../prompts/chat.prompt';
 import { messageInfo } from './group.message.controller';
 
 
+
+
 export const createChatListMessage=async(data:{senderId:string,message:string},socket:Socket)=>{
     try{
-       const msg=await generateChatTitle(data.message);
+       let msg=(await generateChatTitle(data.message))?.trim();
+       if(!msg || /^new chat$/i.test(msg)){
+           const text=data.message.trim();
+           msg=text.length>40 ? text.slice(0,40)+"…" : text;
+       }
        const create=await aiChatList.create({
         userId:data.senderId,
         message:msg,
@@ -17,7 +23,6 @@ export const createChatListMessage=async(data:{senderId:string,message:string},s
        if(!create){
         throw new Error("failed to create msg");
        }
-       //after the chatlist portion is done we will call from frontend to send the message again
        socket.emit("prompt_chat_list_msg",(create));
     }catch(err){
         throw err;
